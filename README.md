@@ -36,7 +36,11 @@ Không muốn cài gì ngoài Node: tải `dao-den-long-v1.0.0.tar.gz` ở Relea
 | E | Thắp đèn / thắp lại / châm dầu (trong 2 m) |
 | F | Tỏa Sáng: choáng và đẩy lùi Bóng Mực (tốn 3 đom đóm) |
 | Kéo chuột, Q / R | Xoay camera |
-| Esc | Tạm dừng (Tiếp tục / Chơi lại Đêm / Cài đặt / Về menu) |
+| Esc | Tạm dừng (Tiếp tục / Chơi lại Đêm / Hướng dẫn / Cài đặt / Về menu) |
+
+**Điện thoại / máy tính bảng** (tự nhận khi màn hình cảm ứng): joystick bên trái để đi, vuốt màn hình để xoay camera, nút **Nhảy / Lướt / Thắp / Tỏa sáng** bên phải (có hiện hồi chiêu), nút **II** để tạm dừng. Nên xoay ngang. Thử trên giả lập điện thoại của Chrome (844×390, cảm ứng): đi, nhảy, xoay camera, tạm dừng đều chạy ([ảnh](docs/proof/phase-4/ui-mobile-play.png)); **chưa thử trên điện thoại thật**.
+
+**Hướng dẫn chơi:** trước mỗi Đêm có khung hướng dẫn (mục tiêu, cái mới của Đêm đó, mẹo, điều khiển); xem lại bất cứ lúc nào ở menu → Hướng dẫn hoặc khi tạm dừng.
 
 Cài đặt (được lưu): âm lượng, độ nhạy chuột, đổi phím (báo trùng, khôi phục mặc định), bảng màu dễ phân biệt, giảm chuyển động, chữ lớn ×1.25, đổ bóng.
 
@@ -100,6 +104,7 @@ node scripts/serve.js --export-leaderboard out.json     # {"entries":[...]} top 
 ## Sáng tạo của tôi
 
 - **Bối cảnh Việt Nam:** Đêm 1 Làng quê Bắc Bộ (cổng làng, nhà ngói, tre, cây đa, trâu, vịt, đèn đình), Đêm 2 Phố cổ Hội An (phố vàng, cầu mái che, sông Hoài thả hoa đăng, đèn lồng lụa, mèo), Đêm 3 Cố đô Huế (thềm đá, tường đỏ, cổng kiểu Ngọ Môn, tháp 7 tầng, đèn cung đình, thỏ ngọc). Nhân vật phụ Ông Đăng giới thiệu mỗi Đêm.
+- **Màn hình chính có đoạn demo tự chơi làm nền** (như video giới thiệu của game): Mây do máy điều khiển nhặt đom đóm, thắp và châm dầu đèn, nhảy, lướt; camera bay vòng; mỗi 40 s chuyển sang Đêm kế tiếp ([ảnh](docs/proof/phase-4/ui-title-demo.png)). Demo dùng một `Sim` riêng, không tính điểm, không lưu; tắt khi vào chơi.
 - Mây có chân tay và dáng đi (bước theo quãng đường thật nên chân không trượt, co chân khi nhảy), khăn rằn ca rô có hai vạt bay theo tốc độ; khi lướt: nghiêng người, vệt bóng vàng, vòng sáng dưới chân và tia sáng bắn ra sau ([ảnh lướt](docs/proof/phase-4/ui-dash-effect.png), [ảnh đi](docs/proof/phase-4/ui-walk-legs.png)).
 - Bóng Mực hiện hình thành **sói mực**: tai nhọn, mõm, đuôi cụp, mắt sáng, viền tím; quay mặt theo hướng chạy, chạy nước kiệu (chân chéo cùng nhịp), choáng thì lắc lư, hút dầu thì cúi rạp ([ảnh](docs/proof/phase-4/ui-wolf.png)). Vẫn dùng InstancedMesh: 4 draw call cho cả đàn. Luật và va chạm của Bóng Mực không đổi.
 - Minimap xoay theo camera, cột sáng chỉ bục nhảy, bầu trời có trăng, biển mây trôi, bóng đổ, hạt bay (lá tre, hoa giấy, hoa phượng), cảnh vật lễ hội đèn lồng đỏ vàng.

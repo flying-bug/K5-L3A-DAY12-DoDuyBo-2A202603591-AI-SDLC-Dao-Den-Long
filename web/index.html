@@ -2,7 +2,9 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Đảo Đèn Lồng</title>
 <link rel="stylesheet" href="/web/style.css">
 </head>
@@ -28,9 +30,21 @@
   <div id="countdown" class="hidden"></div>
   <div id="flash"></div>
   <div id="debug" class="hidden"></div>
+  <!-- touch controls (phones / tablets): shown only when body has the "touch" class -->
+  <div id="touch">
+    <div id="stick"><div id="knob"></div></div>
+    <div id="tbtns">
+      <button class="tb" data-t="interact">Thắp</button>
+      <button class="tb cdb" data-t="pulse" id="tb-pulse"><span class="fill"></span>Tỏa<br>sáng</button>
+      <button class="tb cdb" data-t="dash" id="tb-dash"><span class="fill"></span>Lướt</button>
+      <button class="tb big" data-t="jump">Nhảy</button>
+    </div>
+    <button id="tpause" aria-label="Tạm dừng">II</button>
+  </div>
 </div>
 <div id="help" class="hidden">WASD: đi · Space: nhảy · Shift: lướt · E: nạp ánh sáng · F: tỏa sáng · Kéo chuột / Q,R: xoay · Esc,P: tạm dừng</div>
 
+<div id="fade"></div>
 <div id="screen" class="overlay"></div>
 
 <script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js"}}</script>

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Sim } from '/src/sim.js';
+import { Sim, mulberry32 } from '/src/sim.js';
 import { TUNING as T, WORLD as W } from '/src/config.js';
 import { NIGHTS } from '/src/levels.js';
 import * as audio from '/web/audio.js';
@@ -478,8 +478,17 @@ const INTRO = {
 function showMenu() {
   screen = 'menu'; stopPlayHud();
   audio.stopMusic();
-  show(`<h1>Đảo Đèn Lồng</h1><p class="quote">Đêm nay sương đen đã nuốt hết ánh sáng của đảo.</p><div class="btns">${btn('b-play', 'Chơi')}${btn('b-lb', 'Bảng xếp hạng')}${btn('b-set', 'Cài đặt')}</div>`);
+  if (!attract.on) startAttract(1);
+  show(`<div class="menu-main">
+      <div class="kicker">Ba Đêm · Ba Miền · Một ngọn đèn</div>
+      <h1 class="title"><span>Đảo</span><span>Đèn Lồng</span></h1>
+      <p class="quote">Đêm nay sương đen đã nuốt hết ánh sáng của đảo.</p>
+      <div class="btns menu-btns">${btn('b-play', 'Bắt đầu chơi')}${btn('b-howto', 'Hướng dẫn')}${btn('b-lb', 'Bảng xếp hạng')}${btn('b-set', 'Cài đặt')}</div>
+    </div>
+    <div class="menu-foot">v1.0.0 · ${TOUCH ? 'Joystick để đi · nút bên phải để nhảy, lướt, thắp' : 'WASD đi · Space nhảy · Shift lướt · E thắp · F tỏa sáng'}</div>`);
+  overlay.className = 'overlay menu-screen';
   on('b-play', () => { totalScore = 0; nightsWon = 0; runSeed = (Math.random() * 1e9) | 0; showIntro(1); });
+  on('b-howto', () => showHowTo(showMenu));
   on('b-lb', () => showLeaderboard(showMenu));
   on('b-set', () => showSettings(showMenu));
   focusFirst();
@@ -571,13 +580,62 @@ function wireNameForm() {
     msg.className = 'ok'; msg.textContent = 'Đã lưu vào bảng xếp hạng!'; $('lb-save').disabled = true; inp.disabled = true;
   };
 }
+// ---- how to play: per-night guide (shown before each night) and the full guide from the menu
+const GUIDE = {
+  1: { news: [
+      'Đi gần đom đóm là tự nhặt. Túi chứa tối đa 10 con (thêm 2 sau mỗi lần thắp đèn thành công).',
+      'Đứng sát Đèn Lồng Lớn tắt và bấm <b>Thắp</b>: lần đầu cần 10 đom đóm.',
+      'Đèn sáng hao dầu dần. Bấm <b>Thắp</b> lần nữa để châm dầu (mỗi đom đóm +10).',
+      'Bóng Mực (sói mực) tìm tới đèn yếu để hút dầu và đuổi theo bạn. Chạm phải: mất 1 🔥, rơi nửa số đom đóm.'],
+    tip: 'Thắp 3 đèn gần nhau trước, rồi đi vòng châm dầu. Đèn dưới 30 dầu sẽ nhấp nháy — đó là lúc sói tới.' },
+  2: { news: [
+      '<b>Gió Lạc</b> (dải lụa xám bay) lao tới khi bạn mang từ 5 đom đóm trở lên và cướp tối đa 3 con. Nạp đèn sớm để túi nhẹ.',
+      '<b>Bục nhảy</b> (bục đỏ viền vàng, có cột sáng) bắn bạn qua sông Hoài. Cầu mái che không có lan can: rơi xuống sông mất 1 🔥 và hết đom đóm.',
+      '<b>Bùa Gió</b>: nhặt để chạy nhanh hơn và lướt không cần chờ hồi chiêu trong 10 giây.'],
+    tip: 'Đứng trên bục rồi đi thẳng theo hướng cột sáng. Đừng ôm nhiều đom đóm khi thấy Gió Lạc.' },
+  3: { news: [
+      'Ba thềm điện cao dần. <b>Vách đứng không leo được</b>: lên thềm thứ nhất bằng hai lối dốc có tay vịn vàng, rồi bước vào bục sáng để được tung lên thềm cao nhất.',
+      'Sói mực cũng không leo vách — thềm cao là chỗ trú an toàn tạm thời.',
+      '<b>Gió lớn</b> thổi định kỳ, có báo trước "Gió sắp nổi…": đứng xa mép thềm và mép đảo.',
+      'Có 2 Bùa Gió và Gió Lạc vẫn xuất hiện.'],
+    tip: 'Thắp các đèn trên thềm cao trước (sói khó tới), rồi xuống thắp đèn dưới thấp.' },
+};
+function controlsHtml() {
+  if (TOUCH) return '<b>Joystick</b> trái: đi · vuốt màn hình: xoay camera · nút <b>Nhảy</b>, <b>Lướt</b>, <b>Thắp</b>, <b>Tỏa sáng</b> bên phải · <b>II</b>: tạm dừng';
+  const k = (a) => `<kbd>${keyLabel(binds[a])}</kbd>`;
+  return `${k('up')}${k('left')}${k('down')}${k('right')} đi · ${k('jump')} nhảy · ${k('dash')} lướt · ${k('interact')} thắp / châm dầu · ${k('pulse')} tỏa sáng (tốn ${T.pulse_cost} đom đóm, đẩy lùi sói) · kéo chuột / ${k('camL')} ${k('camR')} xoay · ${k('pause')} tạm dừng`;
+}
+function goalHtml(n) {
+  const N = NIGHTS[n].lanterns.length, need = Math.ceil(T.win_ratio * N), secs = T[NIGHTS[n].duration_key];
+  return `Giữ ít nhất <b>${need}/${N}</b> Đèn Lồng Lớn còn sáng tới bình minh (<b>${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}</b>). Bạn có ${T.flames} 🔥; hết 🔥 là thua.`;
+}
+function guideCard(n) {
+  const g = GUIDE[n];
+  return `<div class="guide">
+    <h3>Mục tiêu</h3><p>${goalHtml(n)}</p>
+    <h3>${n === 1 ? 'Cách chơi' : 'Mới trong Đêm này'}</h3><ul>${g.news.map((x) => `<li>${x}</li>`).join('')}</ul>
+    <h3>Mẹo</h3><p>${g.tip}</p>
+    <h3>Điều khiển</h3><p class="ctl">${controlsHtml()}</p>
+  </div>`;
+}
+function showHowTo(back) {
+  const tabs = [1, 2, 3].map((n) => `<button class="tab" data-n="${n}">Đêm ${n}: ${NIGHTS[n].name}</button>`).join('');
+  show(`<h2>Hướng dẫn chơi</h2><div class="tabs">${tabs}</div><div id="howto"></div><div class="btns">${btn('b-back', 'Quay lại')}</div>`);
+  const pick = (n) => { $('howto').innerHTML = guideCard(n); overlay.querySelectorAll('.tab').forEach((t) => t.classList.toggle('on', +t.dataset.n === n)); };
+  overlay.querySelectorAll('.tab').forEach((t) => { t.onclick = () => pick(+t.dataset.n); });
+  pick(1);
+  on('b-back', back);
+  focusFirst();
+}
+
 function showIntro(n) {
   nightNo = n; screen = 'intro'; stopPlayHud();
-  show(`<h2>Đêm ${n}</h2><h1>${NIGHTS[n].name}</h1><p class="quote">${INTRO[n]}</p><div class="btns">${btn('b-go', 'Bắt đầu')}</div>`);
+  show(`<h2>Đêm ${n}</h2><h1>${NIGHTS[n].name}</h1><p class="quote">${INTRO[n]}</p>${guideCard(n)}<div class="btns">${btn('b-go', 'Bắt đầu')}</div>`);
   on('b-go', () => startNight(n));
   focusFirst();
 }
 function startNight(n) {
+  stopAttract();
   audio.unlock(); audio.startMusic();
   nightNo = n;
   sim = new Sim({ seed: runSeed + n, night: n });
@@ -625,8 +683,8 @@ function pauseGame() {
   showPauseMenu();
 }
 function showPauseMenu() {
-  show(`<h2>Tạm dừng</h2><div class="btns">${btn('b-res', 'Tiếp tục')}${btn('b-rst', 'Chơi lại Đêm')}${btn('b-set', 'Cài đặt')}${btn('b-menu', 'Về menu')}</div>`, true);
-  on('b-res', resumeGame); on('b-rst', () => startNight(nightNo)); on('b-set', () => showSettings(showPauseMenu)); on('b-menu', showMenu);
+  show(`<h2>Tạm dừng</h2><div class="btns">${btn('b-res', 'Tiếp tục')}${btn('b-rst', 'Chơi lại Đêm')}${btn('b-guide', 'Hướng dẫn')}${btn('b-set', 'Cài đặt')}${btn('b-menu', 'Về menu')}</div>`, true);
+  on('b-res', resumeGame); on('b-rst', () => startNight(nightNo)); on('b-guide', () => { show(`<h2>Đêm ${nightNo}: ${NIGHTS[nightNo].name}</h2>${guideCard(nightNo)}<div class="btns">${btn('b-back', 'Quay lại')}</div>`, true); on('b-back', showPauseMenu); focusFirst(); }); on('b-set', () => showSettings(showPauseMenu)); on('b-menu', showMenu);
   focusFirst();
 }
 function resumeGame() {
@@ -657,11 +715,48 @@ addEventListener('mousedown', () => { drag = true; });
 addEventListener('mouseup', () => { drag = false; });
 addEventListener('mousemove', (e) => { if (drag && screen === 'play') yaw -= e.movementX * settings.sens; });
 
+// ---------- touch controls (phones / tablets): virtual stick, action buttons, swipe to turn the camera ----------
+const TOUCH = params.has('touch') || matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0 && !matchMedia('(pointer: fine)').matches;
+document.body.classList.toggle('touch', TOUCH);
+const stick = { id: null, cx: 0, cy: 0, x: 0, z: 0 };
+const camTouch = { id: null, x: 0 };
+{
+  const base = $('stick'), knob = $('knob'), R = 55;
+  const moveKnob = (dx, dy) => {
+    const l = Math.hypot(dx, dy), k = l > R ? R / l : 1;
+    dx *= k; dy *= k;
+    knob.style.transform = `translate(${dx}px, ${dy}px)`;
+    // screen right = sim -x (x is left - right), screen up = sim +z
+    stick.x = -dx / R; stick.z = -dy / R;
+  };
+  base.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); audio.unlock();
+    const r = base.getBoundingClientRect();
+    stick.id = e.pointerId; stick.cx = r.left + r.width / 2; stick.cy = r.top + r.height / 2;
+    base.setPointerCapture(e.pointerId); moveKnob(e.clientX - stick.cx, e.clientY - stick.cy);
+  });
+  base.addEventListener('pointermove', (e) => { if (e.pointerId === stick.id) moveKnob(e.clientX - stick.cx, e.clientY - stick.cy); });
+  const release = (e) => { if (e.pointerId === stick.id) { stick.id = null; moveKnob(0, 0); } };
+  base.addEventListener('pointerup', release); base.addEventListener('pointercancel', release);
+  for (const b of document.querySelectorAll('#tbtns .tb')) {
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); audio.unlock(); if (screen === 'play') edge[b.dataset.t] = true; b.classList.add('down'); });
+    for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, () => b.classList.remove('down'));
+  }
+  $('tpause').addEventListener('pointerdown', (e) => { e.preventDefault(); if (screen === 'play') pauseGame(); });
+  // swipe anywhere else on the 3D view turns the camera
+  const cv = renderer.domElement;
+  cv.addEventListener('pointerdown', (e) => { if (e.pointerType !== 'mouse' && camTouch.id === null) { camTouch.id = e.pointerId; camTouch.x = e.clientX; audio.unlock(); } });
+  addEventListener('pointermove', (e) => { if (e.pointerId === camTouch.id && screen === 'play') { yaw -= (e.clientX - camTouch.x) * settings.sens * 0.8; camTouch.x = e.clientX; } });
+  const camEnd = (e) => { if (e.pointerId === camTouch.id) camTouch.id = null; };
+  addEventListener('pointerup', camEnd); addEventListener('pointercancel', camEnd);
+}
+
 function readInput() {
   if (keys.has(binds.camL)) yaw += 90 / 60;
   if (keys.has(binds.camR)) yaw -= 90 / 60;
-  const x = (keys.has(binds.left) ? 1 : 0) - (keys.has(binds.right) ? 1 : 0);
-  const z = (keys.has(binds.up) ? 1 : 0) - (keys.has(binds.down) ? 1 : 0);
+  let x = (keys.has(binds.left) ? 1 : 0) - (keys.has(binds.right) ? 1 : 0);
+  let z = (keys.has(binds.up) ? 1 : 0) - (keys.has(binds.down) ? 1 : 0);
+  if (stick.id !== null) { x = Math.max(-1, Math.min(1, stick.x)); z = Math.max(-1, Math.min(1, stick.z)); }
   return { move: [x, z], cam_yaw_deg: yaw, jump: edge.jump, interact: edge.interact, pulse: edge.pulse, dash: edge.dash, pause: false };
 }
 
@@ -767,6 +862,8 @@ function render(dt, t) {
   if (screen === 'bench') {
     const bc = benchCamera(benchState.elapsed);
     camera.position.set(...bc.pos); camera.lookAt(...bc.look);
+  } else if (attract.on) {
+    attractCamera(t);
   } else {
     const th = (yaw * Math.PI) / 180, fx = Math.sin(th), fz = Math.cos(th);
     const cy = P.fall > 0 ? 0 : P.pos[1];
@@ -944,6 +1041,12 @@ function updateHud(lit, t) {
   $('cd-pulse').querySelector('.fill').style.height = `${Math.min(100, (P.pulseCd / Math.round(T.pulse_cooldown_s * 60)) * 100)}%`;
   $('cd-dash').classList.toggle('ready', P.dashCd === 0);
   $('cd-pulse').classList.toggle('ready', P.pulseCd === 0 && P.carried >= T.pulse_cost);
+  if (TOUCH) {
+    $('tb-dash').querySelector('.fill').style.height = $('cd-dash').querySelector('.fill').style.height;
+    $('tb-pulse').querySelector('.fill').style.height = $('cd-pulse').querySelector('.fill').style.height;
+    $('tb-dash').classList.toggle('ready', P.dashCd === 0);
+    $('tb-pulse').classList.toggle('ready', P.pulseCd === 0 && P.carried >= T.pulse_cost);
+  }
   $('charmtag').classList.toggle('hidden', P.charm === 0);
   if (P.charm) setTxt($('charmtag'), `Bùa Gió ${Math.ceil(P.charm / 60)}s`);
   $('windwarn').classList.toggle('hidden', !sim.wind.warn);
@@ -958,7 +1061,8 @@ function updateHud(lit, t) {
   }
   const pr = $('prompt');
   pr.classList.toggle('hidden', !near);
-  if (near) setTxt(pr, near.lit ? `${keyLabel(binds.interact)} — Châm dầu (${Math.ceil(near.fuel / FUEL_SCALE)}/${T.fuel_max})` : `${keyLabel(binds.interact)} — ${near.ever ? 'Thắp lại' : 'Thắp đèn'} (${near.deposited}/${near.ever ? T.relight_cost : T.lantern_cost})`);
+  const ik = TOUCH ? 'Bấm Thắp' : keyLabel(binds.interact);
+  if (near) setTxt(pr, near.lit ? `${ik} — Châm dầu (${Math.ceil(near.fuel / FUEL_SCALE)}/${T.fuel_max})` : `${ik} — ${near.ever ? 'Thắp lại' : 'Thắp đèn'} (${near.deposited}/${near.ever ? T.relight_cost : T.lantern_cost})`);
 
   // arrow toward the nearest lantern that needs help when it is off-screen
   if (target) {
@@ -1042,6 +1146,7 @@ function frame(now) {
   last = now;
   fpsN++; fpsT += dt;
   if (fpsT >= 1) { window.__ddl.fps = fpsN / fpsT; adaptResolution(window.__ddl.fps); fpsN = 0; fpsT = 0; if (params.has('debug')) { $('debug').classList.remove('hidden'); $('debug').textContent = `${window.__ddl.fps.toFixed(0)} fps`; } }
+  if (attract.on && sim) { stepAttract(dt); render(dt, now / 1000); requestAnimationFrame(frame); return; }
   if (sim && (screen === 'play' || screen === 'pause' || screen === 'result')) {
     if (screen === 'play') {
       timeAcc += dt;
@@ -1076,6 +1181,73 @@ function adaptResolution(fps) {
     lowSecs = 0;
   }
 }
+// ---------- attract mode: a self-playing demo behind the menus, like a game's title video (display only) ----------
+// Its Sim is never scored or saved; Mây is driven by a tiny autopilot (collect motes, light lanterns, jump, dash, pulse).
+const ATTRACT_SECONDS = 40;
+const attract = { on: false, night: 1, t: 0, acc: 0, rng: mulberry32(2026), stuckT: 0, lastPos: [0, 0], wander: null, switching: false };
+function startAttract(n = attract.night) {
+  attract.on = true; attract.night = n; attract.t = 0; attract.acc = 0; attract.stuckT = 0; attract.wander = null; attract.switching = false;
+  document.body.classList.add('attract');
+  nightNo = n;
+  sim = new Sim({ seed: 1000 + n, night: n, scenario: { lanterns: [{ id: 'L1', lit: true, fuel: 85 }, { id: 'L2', lit: true, fuel: 55 }] } });
+  buildLevel(n);
+  clearEntities();
+  for (const l of sim.lanterns) ents.lanterns.set(l.id, makeLantern(l));
+  for (const c of sim.charms) ents.charms.set(c.id, makeCharm(c));
+  attract.lastPos = [sim.player.pos[0], sim.player.pos[2]];
+}
+function stopAttract() { attract.on = false; document.body.classList.remove('attract'); $('fade').classList.remove('on'); }
+function nextAttract() {
+  if (attract.switching) return;
+  attract.switching = true;
+  $('fade').classList.add('on');
+  setTimeout(() => { if (!attract.on) return; startAttract((attract.night % 3) + 1); $('fade').classList.remove('on'); }, 650);
+}
+function autopilot() {
+  const P = sim.player, r = attract.rng;
+  const dist = (p) => Math.hypot(p[0] - P.pos[0], p[2] - P.pos[2]);
+  let target = null, best = Infinity, toLantern = false;
+  for (const l of sim.lanterns) {
+    const need = l.lit ? (l.fuel < 35 * FUEL_SCALE ? 1 : Infinity) : (l.ever ? T.relight_cost : T.lantern_cost) - l.deposited;
+    if (P.carried >= need && dist(l.pos) < best) { best = dist(l.pos); target = l.pos; toLantern = true; }
+  }
+  if (!target) for (const m of sim.motes) if (Math.abs(m.pos[1] - P.pos[1]) < 1.2 && dist(m.pos) < best) { best = dist(m.pos); target = m.pos; }
+  // unstick: if it barely moved for 2 s, run a random way for a moment
+  attract.stuckT += 1 / 60;
+  if (attract.stuckT > 2) {
+    const moved = Math.hypot(P.pos[0] - attract.lastPos[0], P.pos[2] - attract.lastPos[1]);
+    if (moved < 1 && !(toLantern && best < 2)) { const a = r() * Math.PI * 2; attract.wander = { dir: [Math.cos(a), Math.sin(a)], t: 1 }; }
+    attract.stuckT = 0; attract.lastPos = [P.pos[0], P.pos[2]];
+  }
+  let move = [0, 0], interact = false, jump = r() < 0.006, pulse = false;
+  if (attract.wander && attract.wander.t > 0) { attract.wander.t -= 1 / 60; move = attract.wander.dir; jump = jump || r() < 0.03; }
+  else if (target) {
+    const dx = target[0] - P.pos[0], dz = target[2] - P.pos[2], l = Math.hypot(dx, dz) || 1;
+    if (toLantern && l < 1.6) interact = r() < 0.25; else move = [dx / l, dz / l];
+  }
+  // the sim maps move through cam_yaw_deg = 0, so world x/z are passed as they are
+  const dash = best > 7 && r() < 0.006;
+  for (const sh of sim.shades) if (Math.hypot(sh.pos[0] - P.pos[0], sh.pos[2] - P.pos[2]) < 4 && P.carried >= T.pulse_cost && r() < 0.08) pulse = true;
+  return { move, cam_yaw_deg: 0, jump, interact, pulse, dash, pause: false };
+}
+function stepAttract(dt) {
+  attract.acc += dt;
+  while (attract.acc >= 1 / 60) {
+    attract.acc -= 1 / 60; attract.t += 1 / 60;
+    if (sim.state !== 'playing') break;
+    const evs = sim.step(autopilot());
+    for (const e of evs) { if (e.name === 'dash') dashBurst(); if (e.name === 'pulse') spawnPulse(); }
+  }
+  if (sim.state !== 'playing' || attract.t > ATTRACT_SECONDS) nextAttract();
+}
+function attractCamera(t) {
+  const P = sim.player, a = t * 0.11;
+  const R = 14 + Math.sin(t * 0.19) * 5, h = 6.5 + Math.sin(t * 0.13) * 2.5;
+  const cy = P.fall > 0 ? 0 : P.pos[1];
+  camera.position.set(P.pos[0] + Math.sin(a) * R, cy + h, P.pos[2] + Math.cos(a) * R);
+  camera.lookAt(P.pos[0], cy + 1.2, P.pos[2]);
+}
+
 function renderIdle(t) {
   camera.position.set(Math.sin(t * 0.1) * 60, 25, Math.cos(t * 0.1) * 60);
   camera.lookAt(0, 0, 0);

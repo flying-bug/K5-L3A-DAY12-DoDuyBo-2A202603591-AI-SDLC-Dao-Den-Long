@@ -16,6 +16,13 @@
 - Bóng Mực được vẽ bằng instancing (4 draw call cho mọi con) và shadow map chỉ cập nhật khi cần: benchmark từ ~64 FPS / p1-low 15 lên ~105 FPS / p1-low 36 trên GPU tích hợp.
 - `Sim` có cờ `bench` (chỉ dùng cho cảnh benchmark): tắt sinh thực thể, sát thương, nhặt, tương tác, hao dầu và kết thúc Đêm. Không ảnh hưởng headless.
 
+### Bổ sung sau tag `phase-4` (trước Release v1.0.0) — chỉ phần hiển thị trong `web/`, không đổi luật hay Contract
+- Điều khiển cảm ứng cho điện thoại: joystick, nút Nhảy/Lướt/Thắp/Tỏa sáng, vuốt xoay camera, nút tạm dừng; HUD và menu co lại ở màn hình nhỏ.
+- Màn hình chính mới với đoạn demo tự chơi làm nền (attract mode), nút kiểu game.
+- Hướng dẫn chơi từng Đêm (trước mỗi Đêm, trong menu và khi tạm dừng).
+- Mây có chân, dáng đi, khăn rằn, hiệu ứng lướt; Bóng Mực hiện hình sói mực. Bench đo lại: 104.3 / 34.9 FPS.
+- CI: GitHub Actions chạy `npm test` và đăng bản web lên GitHub Pages.
+
 ## Phase 3 — "Đèn cạn dầu" (Contract v1.2) — BREAKING
 
 ### Breaking changes (hành vi cũ không còn đúng)
