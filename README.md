@@ -100,6 +100,7 @@ node scripts/serve.js --export-leaderboard out.json     # {"entries":[...]} top 
 ## Sáng tạo của tôi
 
 - **Bối cảnh Việt Nam:** Đêm 1 Làng quê Bắc Bộ (cổng làng, nhà ngói, tre, cây đa, trâu, vịt, đèn đình), Đêm 2 Phố cổ Hội An (phố vàng, cầu mái che, sông Hoài thả hoa đăng, đèn lồng lụa, mèo), Đêm 3 Cố đô Huế (thềm đá, tường đỏ, cổng kiểu Ngọ Môn, tháp 7 tầng, đèn cung đình, thỏ ngọc). Nhân vật phụ Ông Đăng giới thiệu mỗi Đêm.
+- Mây có chân tay và dáng đi (bước theo quãng đường thật nên chân không trượt, co chân khi nhảy), khăn rằn ca rô có hai vạt bay theo tốc độ; khi lướt: nghiêng người, vệt bóng vàng, vòng sáng dưới chân và tia sáng bắn ra sau ([ảnh lướt](docs/proof/phase-4/ui-dash-effect.png), [ảnh đi](docs/proof/phase-4/ui-walk-legs.png)).
 - Minimap xoay theo camera, cột sáng chỉ bục nhảy, bầu trời có trăng, biển mây trôi, bóng đổ, hạt bay (lá tre, hoa giấy, hoa phượng), cảnh vật lễ hội đèn lồng đỏ vàng.
 - Mọi phần sáng tạo chỉ ở `web/` (hiển thị), không đổi luật hay đầu ra headless; trong cảnh benchmark các thực thể sáng tạo động được tắt. Bằng chứng: 75 test headless vẫn đạt.
 - Đêm 2 và 3 dùng màu nền khác bảng màu chuẩn của Ticket-02 (theo chủ đề vùng miền); Đêm 1 giữ bảng màu chuẩn.

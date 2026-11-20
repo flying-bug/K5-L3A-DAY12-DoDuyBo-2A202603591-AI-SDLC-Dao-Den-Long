@@ -157,20 +157,165 @@ function buildLevel(n, opts = {}) {
 const lanternLights = [0, 1, 2].map(() => { const l = new THREE.PointLight(0xffb347, 0, 18, 1.6); scene.add(l); return l; });
 const ents = { player: null, lanterns: new Map(), shades: new Map(), drifters: new Map(), charms: new Map(), motes: null, halos: null, pulses: [], leaves: null };
 
+// checkered "khăn rằn" scarf texture, drawn in code
+function scarfTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 32;
+  const x = c.getContext('2d');
+  x.fillStyle = '#c8102e'; x.fillRect(0, 0, 32, 32);
+  x.fillStyle = 'rgba(255,240,220,0.85)';
+  for (let i = 0; i < 32; i += 8) { x.fillRect(i, 0, 2, 32); x.fillRect(0, i, 32, 2); }
+  x.fillStyle = 'rgba(60,0,10,0.35)';
+  for (let i = 4; i < 32; i += 8) { x.fillRect(i, 0, 1, 32); x.fillRect(0, i, 32, 1); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.magFilter = THREE.NearestFilter; t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+// Mây: legs, arms and scarf tails hang from pivots so render() can animate a walk cycle (display only, no rules)
 function makePlayer() {
   const g = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.38, 0.7, 4, 10), mat(C.shirt)); body.position.y = 0.8;
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 12), mat(0xe9c9a0)); head.position.y = 1.55;
+  const inner = new THREE.Group(); // lean / bob happen here so the outer group stays on the sim position
+  g.add(inner);
+  const skin = mat(0xe9c9a0), pants = mat(0x3b3f6b), sandal = mat(C.wood), shirt = mat(C.shirt);
+  const scarfMat = mat(0xffffff, { map: scarfTexture() });
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.36, 0.42, 4, 10), shirt); body.position.y = 0.98;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 12), skin); head.position.y = 1.55;
   const hat = new THREE.Mesh(new THREE.ConeGeometry(0.85, 0.55, 18), mat(C.sand)); hat.position.y = 1.95;
-  const scarf = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.09, 8, 16), mat(C.scarf)); scarf.rotation.x = Math.PI / 2; scarf.position.y = 1.3;
+  const scarf = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.09, 8, 16), scarfMat); scarf.rotation.x = Math.PI / 2; scarf.position.y = 1.3;
+  inner.add(body, head, hat, scarf);
+  // legs: pivot at the hip, sole touches y = 0 when straight
+  const legGeo = new THREE.CapsuleGeometry(0.1, 0.26, 3, 8), footGeo = new THREE.BoxGeometry(0.18, 0.09, 0.3);
+  const legs = [-1, 1].map((s) => {
+    const hip = new THREE.Group(); hip.position.set(0.16 * s, 0.5, 0);
+    const leg = new THREE.Mesh(legGeo, pants); leg.position.y = -0.22;
+    const foot = new THREE.Mesh(footGeo, sandal); foot.position.set(0, -0.455, 0.05);
+    hip.add(leg, foot); inner.add(hip); return hip;
+  });
+  // arms: pivot at the shoulder; the right hand holds the lantern pole
+  const armGeo = new THREE.CapsuleGeometry(0.08, 0.28, 3, 8);
+  const arms = [-1, 1].map((s) => {
+    const sh = new THREE.Group(); sh.position.set(0.4 * s, 1.28, 0);
+    const arm = new THREE.Mesh(armGeo, shirt); arm.position.y = -0.2;
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), skin); hand.position.y = -0.4;
+    sh.add(arm, hand); inner.add(sh); return sh;
+  });
+  arms[1].rotation.set(-0.7, 0, 0.25);
+  // two scarf tails flutter behind the neck
+  const tailGeo = new THREE.BoxGeometry(0.14, 0.5, 0.03); tailGeo.translate(0, -0.25, 0);
+  const tails = [-1, 1].map((s) => {
+    const p = new THREE.Group(); p.position.set(0.09 * s, 1.32, -0.3);
+    p.add(new THREE.Mesh(tailGeo, scarfMat)); inner.add(p); return p;
+  });
   const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.5, 6), mat(C.wood)); pole.position.set(0.5, 1.3, 0.25);
   const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 12), basic(C.lamp)); lamp.position.set(0.5, 2.1, 0.25);
   const light = new THREE.PointLight(C.lamp, 1.6, 14, 1.5); light.position.copy(lamp.position);
-  g.add(body, head, hat, scarf, pole, lamp, light);
-  g.userData = { light, lamp };
+  inner.add(pole, lamp, light);
+  g.userData = { light, lamp, inner, legs, arms, tails, phase: 0, spd: 0, last: null, ghostT: 0 };
   g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
   scene.add(g);
   return g;
+}
+
+// ---- dash effect: golden after-images, a dust ring at the feet and sparks streaming backwards (display only)
+const dashFx = { ghosts: [], rings: [], sparks: null, sparkData: [] };
+const GHOST_LIFE = 0.4;
+function makeDashFx() {
+  const ghostGeo = [new THREE.CapsuleGeometry(0.36, 0.8, 3, 8).translate(0, 0.85, 0), new THREE.ConeGeometry(0.85, 0.55, 12).translate(0, 1.95, 0)];
+  for (let i = 0; i < 16; i++) {
+    const m = new THREE.MeshBasicMaterial({ color: C.gold, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+    const gh = new THREE.Group(); ghostGeo.forEach((geo) => gh.add(new THREE.Mesh(geo, m)));
+    gh.visible = false; gh.userData = { m, life: 0 }; scene.add(gh); dashFx.ghosts.push(gh);
+  }
+  for (let i = 0; i < 2; i++) {
+    const m = new THREE.MeshBasicMaterial({ color: 0xfff1c4, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    const r = new THREE.Mesh(new THREE.RingGeometry(0.7, 1, 28), m); r.rotation.x = -Math.PI / 2;
+    r.visible = false; r.userData = { m, life: 0 }; scene.add(r); dashFx.rings.push(r);
+  }
+  const N = 48, pos = new Float32Array(N * 3);
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  dashFx.sparks = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffd36b, size: 0.22, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
+  dashFx.sparks.frustumCulled = false; scene.add(dashFx.sparks);
+  for (let i = 0; i < N; i++) { dashFx.sparkData.push({ life: 0, v: [0, 0, 0] }); pos[i * 3 + 1] = -999; }
+}
+function dashBurst() {
+  if (!dashFx.sparks || !sim) return;
+  const P = sim.player;
+  const r = dashFx.rings.find((x) => x.userData.life <= 0) || dashFx.rings[0];
+  r.position.set(P.pos[0], P.pos[1] + 0.05, P.pos[2]); r.userData.life = 0.35; r.visible = true;
+}
+function updateDashFx(dt, P, pg) {
+  const u = pg.userData, dashing = P.dashLeft > 0 && P.fall === 0;
+  // after-images every ~30 ms while dashing
+  u.ghostT -= dt;
+  if (dashing && u.ghostT <= 0) {
+    u.ghostT = 0.045;
+    const gh = dashFx.ghosts.find((x) => x.userData.life <= 0);
+    if (gh) { gh.position.copy(pg.position); gh.rotation.copy(pg.rotation); gh.userData.life = GHOST_LIFE; gh.visible = true; }
+  }
+  for (const gh of dashFx.ghosts) {
+    if (gh.userData.life <= 0) continue;
+    gh.userData.life -= dt;
+    gh.userData.m.opacity = Math.max(0, gh.userData.life / GHOST_LIFE) * 0.3;
+    if (gh.userData.life <= 0) gh.visible = false;
+  }
+  for (const r of dashFx.rings) {
+    if (r.userData.life <= 0) continue;
+    r.userData.life -= dt;
+    const k = 1 - Math.max(0, r.userData.life) / 0.35;
+    r.scale.setScalar(0.6 + k * 1.8); r.userData.m.opacity = (1 - k) * 0.7;
+    if (r.userData.life <= 0) r.visible = false;
+  }
+  // sparks: emitted behind Mây while dashing, drift back and fade
+  const pos = dashFx.sparks.geometry.attributes.position.array;
+  let emit = dashing ? 3 : 0;
+  for (let i = 0; i < dashFx.sparkData.length; i++) {
+    const s = dashFx.sparkData[i];
+    if (s.life <= 0 && emit > 0) {
+      emit--; s.life = 0.35 + Math.random() * 0.2;
+      const bx = -P.dashDir[0], bz = -P.dashDir[1];
+      pos[i * 3] = P.pos[0] + (Math.random() - 0.5) * 0.6; pos[i * 3 + 1] = P.pos[1] + 0.3 + Math.random() * 1.4; pos[i * 3 + 2] = P.pos[2] + (Math.random() - 0.5) * 0.6;
+      s.v = [bx * (3 + Math.random() * 3) + (Math.random() - 0.5), 0.6 + Math.random(), bz * (3 + Math.random() * 3) + (Math.random() - 0.5)];
+    }
+    if (s.life > 0) {
+      s.life -= dt;
+      pos[i * 3] += s.v[0] * dt; pos[i * 3 + 1] += s.v[1] * dt; pos[i * 3 + 2] += s.v[2] * dt;
+      if (s.life <= 0) pos[i * 3 + 1] = -999;
+    }
+  }
+  dashFx.sparks.geometry.attributes.position.needsUpdate = true;
+}
+
+// walk cycle driven by the distance actually travelled, so feet do not slide
+function animatePlayer(dt, t, P, pg) {
+  const u = pg.userData;
+  const here = [P.pos[0], P.pos[2]];
+  let d = u.last ? Math.hypot(here[0] - u.last[0], here[1] - u.last[1]) : 0;
+  if (d > 2) d = 0; // respawn / teleport
+  u.last = here;
+  const spd = dt > 0 ? d / dt : 0;
+  u.spd += (spd - u.spd) * Math.min(1, dt * 12);
+  const dashing = P.dashLeft > 0;
+  const amp = Math.min(1, u.spd / 4) * 0.75;
+  if (P.grounded && !dashing) u.phase += d * 3.4;
+  const s = Math.sin(u.phase);
+  const [legL, legR] = u.legs, [armL, armR] = u.arms;
+  let lean = 0, bob = 0;
+  const lerp = (o, v, k = Math.min(1, dt * 18)) => { o.rotation.x += (v - o.rotation.x) * k; };
+  if (dashing) {
+    lean = 0.38;
+    lerp(legL, 0.95); lerp(legR, 0.45); lerp(armL, 1.1);
+  } else if (!P.grounded) {
+    lerp(legL, -0.55); lerp(legR, 0.25); lerp(armL, -1.2);
+  } else {
+    lerp(legL, s * amp, 1); lerp(legR, -s * amp, 1); lerp(armL, -s * amp * 0.9, 1);
+    bob = Math.abs(Math.sin(u.phase)) * 0.07 * Math.min(1, u.spd / 3);
+    lean = Math.min(1, u.spd / 6) * 0.12;
+  }
+  armR.rotation.x = -0.7 + (P.grounded && !dashing ? s * amp * 0.15 : 0);
+  u.inner.rotation.x += (lean - u.inner.rotation.x) * Math.min(1, dt * 14);
+  u.inner.position.y = bob;
+  // scarf tails stream back with speed and flutter
+  const flow = Math.min(1.35, 0.2 + u.spd * 0.09 + (dashing ? 0.5 : 0));
+  u.tails.forEach((tl, i) => { tl.rotation.x = flow + Math.sin(t * (10 + u.spd) + i * 1.7) * (0.08 + u.spd * 0.012); tl.rotation.z = (i ? 1 : -1) * 0.12; });
 }
 function makeLantern(l) {
   const g = new THREE.Group();
@@ -550,7 +695,7 @@ function handleEvents(evs) {
       case 'lantern_lit': audio.sfx.light(); break;
       case 'pulse': audio.sfx.pulse(); spawnPulse(); break;
       case 'player_hit': (e.data.by === 'fall' ? audio.sfx.fall : audio.sfx.hit)(); hitFx(); break;
-      case 'dash': audio.sfx.dash(); break;
+      case 'dash': audio.sfx.dash(); dashBurst(); break;
       case 'charm_picked': audio.sfx.charm(); break;
       case 'drifter_steal': audio.sfx.steal(); break;
       case 'shade_spawned': audio.sfx.spawn(); break;
@@ -566,7 +711,7 @@ function spawnPulse() {
 
 // ---------- rendering ----------
 function ensureEntities() {
-  if (!ents.player) { ents.player = makePlayer(); makeMotes(); makeLeaves(); }
+  if (!ents.player) { ents.player = makePlayer(); makeMotes(); makeLeaves(); makeDashFx(); }
 }
 const tmpM = new THREE.Matrix4(), tmpV = new THREE.Vector3(), tmpS = new THREE.Vector3(), tmpQ = new THREE.Quaternion();
 const cache = {};
@@ -582,6 +727,8 @@ function render(dt, t) {
   pg.rotation.y = Math.atan2(P.face[0], P.face[1]);
   pg.visible = !(P.invuln > 0 && Math.floor(t * 10) % 2 === 0) && P.fall === 0;
   pg.userData.light.intensity = 1.2 + P.carried * 0.12;
+  animatePlayer(dt, t, P, pg);
+  updateDashFx(dt, P, pg);
 
   // camera
   if (screen === 'bench') {
