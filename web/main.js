@@ -359,15 +359,48 @@ function makeLantern(l) {
 }
 const MAXSH = 256;
 let shadeInst = null;
+// Bóng Mực drawn as ink wolves. Local frame: origin = shade centre (1 m above ground, ground at y = -1), +Z = forward.
+// The static parts are merged into one geometry so the whole pack costs 4 draw calls (body, outline, legs, eyes).
+function mergeGeos(parts) {
+  const pos = [], nor = [];
+  for (const { geo, at, rot = [0, 0, 0], scale = [1, 1, 1] } of parts) {
+    const g = geo.index ? geo.toNonIndexed() : geo.clone();
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(...at), new THREE.Quaternion().setFromEuler(new THREE.Euler(...rot)), new THREE.Vector3(...scale)));
+    pos.push(...g.attributes.position.array); nor.push(...g.attributes.normal.array);
+  }
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  out.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  return out;
+}
+function wolfParts(k) { // k > 1 inflates every part around its own centre (for the outline shell)
+  const s = (x, y, z) => [x * k, y * k, z * k];
+  return [
+    // low segment counts on purpose: 200 of them are drawn in the benchmark scene (~1/3 of the triangles of a smooth build)
+    { geo: new THREE.CapsuleGeometry(0.3, 0.85, 2, 7), at: [0, -0.3, -0.05], rot: [Math.PI / 2, 0, 0], scale: s(0.95, 1, 1) }, // body
+    { geo: new THREE.IcosahedronGeometry(0.38, 0), at: [0, -0.2, 0.38], scale: s(0.9, 1, 1.05) }, // chest ruff
+    { geo: new THREE.IcosahedronGeometry(0.27, 0), at: [0, 0.1, 0.78], scale: s(1, 0.9, 1.1) }, // head
+    { geo: new THREE.CylinderGeometry(0.07, 0.14, 0.42, 5, 1, true), at: [0, 0.02, 1.1], rot: [Math.PI / 2, 0, 0], scale: s(1, 1, 1) }, // snout
+    { geo: new THREE.ConeGeometry(0.09, 0.26, 4, 1, true), at: [0.13, 0.37, 0.72], rot: [-0.15, 0, -0.25], scale: s(1, 1, 1) }, // ears
+    { geo: new THREE.ConeGeometry(0.09, 0.26, 4, 1, true), at: [-0.13, 0.37, 0.72], rot: [-0.15, 0, 0.25], scale: s(1, 1, 1) },
+    { geo: new THREE.ConeGeometry(0.14, 0.78, 5, 1, true), at: [0, -0.32, -0.92], rot: [-1.87, 0, 0], scale: s(1, 1, 1) }, // drooping tail
+  ];
+}
+const WOLF_HIPS = [[0.17, -0.4, 0.42], [-0.17, -0.4, 0.42], [0.17, -0.4, -0.42], [-0.17, -0.4, -0.42]].map(([x, y, z]) => new THREE.Matrix4().makeTranslation(x, y, z));
+const WOLF_EYES = [[0.11, 0.15, 0.98], [-0.11, 0.15, 0.98]].map(([x, y, z]) => new THREE.Matrix4().makeTranslation(x, y, z));
 function makeShadeInst() {
-  const mk = (geo, material) => { const m = new THREE.InstancedMesh(geo, material, MAXSH); m.frustumCulled = false; m.count = 0; scene.add(m); return m; };
-  const eyeGeo = new THREE.SphereGeometry(0.12, 8, 8);
+  const mk = (geo, material, n = MAXSH) => { const m = new THREE.InstancedMesh(geo, material, n); m.frustumCulled = false; m.count = 0; scene.add(m); return m; };
   const outMat = new THREE.MeshBasicMaterial({ color: pal.outline, side: THREE.BackSide });
   const eyeMat = new THREE.MeshBasicMaterial({ color: pal.eye });
+  const bodyMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  const legGeo = new THREE.CylinderGeometry(0.075, 0.06, 0.62, 4, 1, true).translate(0, -0.31, 0); // hangs from the hip, paw on the ground
   shadeInst = {
-    body: mk(new THREE.IcosahedronGeometry(0.85, 1), new THREE.MeshLambertMaterial({ color: 0xffffff })),
-    outline: mk(new THREE.IcosahedronGeometry(0.98, 1), outMat),
-    eyeL: mk(eyeGeo, eyeMat), eyeR: mk(eyeGeo, eyeMat), outMat, eyeMat,
+    body: mk(mergeGeos(wolfParts(1)), bodyMat),
+    outline: mk(mergeGeos(wolfParts(1.13)), outMat),
+    legs: mk(legGeo, bodyMat, MAXSH * 4),
+    eyes: mk(new THREE.IcosahedronGeometry(0.065, 0), eyeMat, MAXSH * 2),
+    outMat, eyeMat,
+    gait: new Map(), // shade id -> { x, z, yaw, phase } for facing and the trot cycle (display only)
   };
 }
 function applyPalette() {
@@ -718,7 +751,7 @@ const cache = {};
 const setTxt = (el, v) => { if (cache[el.id] !== v) { cache[el.id] = v; el.innerHTML = v; } };
 
 const shTmp = new THREE.Object3D(), shM = new THREE.Matrix4(), shCol = new THREE.Color();
-const shEyeL = new THREE.Matrix4().makeTranslation(0.3, 0.2, 0.7), shEyeR = new THREE.Matrix4().makeTranslation(-0.3, 0.2, 0.7);
+const shRot = new THREE.Matrix4();
 function render(dt, t) {
   ensureEntities();
   const P = sim.player;
@@ -789,19 +822,44 @@ function render(dt, t) {
   // shades
   if (!shadeInst) makeShadeInst();
   {
-    const n = Math.min(sim.shades.length, MAXSH);
+    const n = Math.min(sim.shades.length, MAXSH), gait = shadeInst.gait;
+    if (gait.size > n * 2 + 32) { const live = new Set(sim.shades.map((s) => s.id)); for (const id of gait.keys()) if (!live.has(id)) gait.delete(id); }
     for (let i = 0; i < n; i++) {
       const sh = sim.shades[i];
-      shTmp.position.set(sh.pos[0], sh.pos[1] + Math.sin(t * 4 + sh.pos[0]) * 0.1, sh.pos[2]);
-      shTmp.rotation.set(0, Math.atan2(P.pos[0] - sh.pos[0], P.pos[2] - sh.pos[2]), 0);
+      let g = gait.get(sh.id);
+      if (!g) { g = { x: sh.pos[0], z: sh.pos[2], yaw: Math.atan2(Math.cos(sh.heading), Math.sin(sh.heading)), phase: Math.random() * 6 }; gait.set(sh.id, g); }
+      const dx = sh.pos[0] - g.x, dz = sh.pos[2] - g.z;
+      let d = Math.hypot(dx, dz); if (d > 3) d = 0;
+      g.x = sh.pos[0]; g.z = sh.pos[2];
+      // face the way it runs (chasers and drainers turn toward their target when standing)
+      let want = g.yaw;
+      if (d > 0.004) want = Math.atan2(dx, dz);
+      else if (sh.state === 'chase') want = Math.atan2(P.pos[0] - sh.pos[0], P.pos[2] - sh.pos[2]);
+      let dy = want - g.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+      g.yaw += dy * Math.min(1, dt * 10);
+      g.phase += d * 4.2;
+      const speed = dt > 0 ? d / dt : 0, amp = Math.min(1, speed / 3) * 0.6;
+      const stunned = sh.state === 'stunned', drain = sh.state === 'drain';
+      const trot = Math.sin(g.phase);
+      shTmp.position.set(sh.pos[0], sh.pos[1] + Math.abs(trot) * 0.06 * amp - (drain ? 0.18 : 0), sh.pos[2]);
+      shTmp.rotation.set(drain ? 0.18 : 0, g.yaw, stunned ? Math.sin(t * 9 + i) * 0.3 : 0, 'YXZ');
       shTmp.scale.setScalar(sh.state === 'spawning' ? 0.4 : 1);
       shTmp.updateMatrix();
       shadeInst.body.setMatrixAt(i, shTmp.matrix); shadeInst.outline.setMatrixAt(i, shTmp.matrix);
-      shadeInst.eyeL.setMatrixAt(i, shM.copy(shTmp.matrix).multiply(shEyeL)); shadeInst.eyeR.setMatrixAt(i, shM.copy(shTmp.matrix).multiply(shEyeR));
-      shadeInst.body.setColorAt(i, shCol.setHex(sh.state === 'stunned' ? C.stun : C.shade));
+      shCol.setHex(stunned ? C.stun : C.shade);
+      shadeInst.body.setColorAt(i, shCol);
+      for (let k = 0; k < 4; k++) {
+        // diagonal pairs move together: front-right with back-left
+        const sw = (k === 0 || k === 3 ? trot : -trot) * amp + (drain ? (k < 2 ? -0.5 : 0.6) : 0);
+        shM.copy(shTmp.matrix).multiply(WOLF_HIPS[k]).multiply(shRot.makeRotationX(sw));
+        shadeInst.legs.setMatrixAt(i * 4 + k, shM); shadeInst.legs.setColorAt(i * 4 + k, shCol);
+      }
+      shadeInst.eyes.setMatrixAt(i * 2, shM.copy(shTmp.matrix).multiply(WOLF_EYES[0]));
+      shadeInst.eyes.setMatrixAt(i * 2 + 1, shM.copy(shTmp.matrix).multiply(WOLF_EYES[1]));
     }
-    for (const m of [shadeInst.body, shadeInst.outline, shadeInst.eyeL, shadeInst.eyeR]) { m.count = n; m.instanceMatrix.needsUpdate = true; }
-    if (shadeInst.body.instanceColor) shadeInst.body.instanceColor.needsUpdate = true;
+    shadeInst.body.count = shadeInst.outline.count = n; shadeInst.legs.count = n * 4; shadeInst.eyes.count = n * 2;
+    for (const m of [shadeInst.body, shadeInst.outline, shadeInst.legs, shadeInst.eyes]) m.instanceMatrix.needsUpdate = true;
+    for (const m of [shadeInst.body, shadeInst.legs]) if (m.instanceColor) m.instanceColor.needsUpdate = true;
   }
   syncMap(ents.drifters, sim.drifters, makeDrifter, (g, d) => {
     g.position.set(d.pos[0], d.pos[1] + Math.sin(t * 3) * 0.2, d.pos[2]);

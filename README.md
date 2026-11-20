@@ -71,7 +71,7 @@ node scripts/bench.mjs --seed 42 --duration 30 --out bench.json      # mở Chro
 
 Cảnh chuẩn: Đêm 1, 200 Bóng Mực `wander`, 100 đom đóm, L1–L3 sáng fuel 100, Mây đứng yên, camera bay vòng R 30 m / Y 15 m / 15 s một vòng, 3 s khởi động rồi đo. Vsync được tắt bằng cờ `--disable-gpu-vsync --disable-frame-rate-limit`. `peak_mem_mb` là `null` vì là bản web (trang không đọc được RSS của trình duyệt); có thêm `js_heap_peak_mb`. Thêm `--headless` để chạy không cửa sổ (render bằng CPU, số đo không có ý nghĩa).
 
-Kết quả trên máy làm bài ([bench.json](bench.json)): **avg 105.6 FPS, p1-low 36.5 FPS, p95 13.5 ms, load 1.9 s** (Intel UHD Graphics, Chrome 157, Windows 11).
+Kết quả trên máy làm bài ([bench.json](bench.json)): **avg 104.3 FPS, p1-low 34.9 FPS, p95 15.5 ms, load 2.0 s** (Intel UHD Graphics, Chrome 157, Windows 11, đã có mô hình sói). Máy laptop này dao động nhiều giữa các lần đo: chạy xen kẽ 4 lần (bản trước và sau khi có sói) được avg 103–131 FPS, p1-low 10–60 FPS, không thấy khác biệt do sói.
 
 ## Soak test
 
@@ -101,6 +101,7 @@ node scripts/serve.js --export-leaderboard out.json     # {"entries":[...]} top 
 
 - **Bối cảnh Việt Nam:** Đêm 1 Làng quê Bắc Bộ (cổng làng, nhà ngói, tre, cây đa, trâu, vịt, đèn đình), Đêm 2 Phố cổ Hội An (phố vàng, cầu mái che, sông Hoài thả hoa đăng, đèn lồng lụa, mèo), Đêm 3 Cố đô Huế (thềm đá, tường đỏ, cổng kiểu Ngọ Môn, tháp 7 tầng, đèn cung đình, thỏ ngọc). Nhân vật phụ Ông Đăng giới thiệu mỗi Đêm.
 - Mây có chân tay và dáng đi (bước theo quãng đường thật nên chân không trượt, co chân khi nhảy), khăn rằn ca rô có hai vạt bay theo tốc độ; khi lướt: nghiêng người, vệt bóng vàng, vòng sáng dưới chân và tia sáng bắn ra sau ([ảnh lướt](docs/proof/phase-4/ui-dash-effect.png), [ảnh đi](docs/proof/phase-4/ui-walk-legs.png)).
+- Bóng Mực hiện hình thành **sói mực**: tai nhọn, mõm, đuôi cụp, mắt sáng, viền tím; quay mặt theo hướng chạy, chạy nước kiệu (chân chéo cùng nhịp), choáng thì lắc lư, hút dầu thì cúi rạp ([ảnh](docs/proof/phase-4/ui-wolf.png)). Vẫn dùng InstancedMesh: 4 draw call cho cả đàn. Luật và va chạm của Bóng Mực không đổi.
 - Minimap xoay theo camera, cột sáng chỉ bục nhảy, bầu trời có trăng, biển mây trôi, bóng đổ, hạt bay (lá tre, hoa giấy, hoa phượng), cảnh vật lễ hội đèn lồng đỏ vàng.
 - Mọi phần sáng tạo chỉ ở `web/` (hiển thị), không đổi luật hay đầu ra headless; trong cảnh benchmark các thực thể sáng tạo động được tắt. Bằng chứng: 75 test headless vẫn đạt.
 - Đêm 2 và 3 dùng màu nền khác bảng màu chuẩn của Ticket-02 (theo chủ đề vùng miền); Đêm 1 giữ bảng màu chuẩn.
