@@ -1,0 +1,24 @@
+
+> dao-den-long@0.1.0 test
+> node --test "tests/*.test.js"
+
+✔ contract tuning matches src/config.js (5.9094ms)
+✔ tick 0 snapshot, end line, tick counting and time_left (66.8106ms)
+✔ movement: 1 s at speed along +Z, normalised diagonal, camera yaw (201.5892ms)
+✔ pickup + deposit + light lantern + win with score (65.815ms)
+✔ scenario setup gives no score/events (lit lantern) (71.169ms)
+✔ shade hit: lose a flame, drop motes, invulnerability, then lost/no_flames (75.8553ms)
+✔ pulse stuns shade in radius, costs motes, pushes away (94.5114ms)
+✔ safe radius: shade cannot enter lit lantern zone (67.8387ms)
+✔ time runs out -> lost/dawn (64.7487ms)
+✔ determinism with random motes/shades, same seed twice; different seed differs (216.3196ms)
+✔ bad inputs/scenario -> exit code 2 (290.241ms)
+✔ jump leaves and returns to ground (y=0) (67.2518ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1387.6245

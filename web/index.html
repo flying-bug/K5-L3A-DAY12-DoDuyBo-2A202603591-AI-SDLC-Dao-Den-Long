@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Đảo Đèn Lồng</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#0b0618;font-family:system-ui,sans-serif;color:#ffe9b8}
+  canvas{display:block}
+  #hud{position:fixed;top:12px;left:14px;font-size:18px;line-height:1.5;text-shadow:0 1px 4px #000;pointer-events:none}
+  #hud b{color:#ffb347}
+  #help{position:fixed;bottom:10px;left:14px;font-size:13px;opacity:.75;pointer-events:none}
+  #msg{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:#0b0618cc;text-align:center}
+  #msg h1{font-size:44px;margin:0 0 8px;color:#ffb347}
+  #msg p{font-size:20px;margin:4px}
+</style>
+</head>
+<body>
+<div id="hud"></div>
+<div id="help">WASD/mũi tên: đi · Space: nhảy · E: thắp đèn · F: tỏa sáng · Kéo chuột hoặc Q/R: xoay camera · Enter: chơi lại</div>
+<div id="msg"></div>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js"}}</script>
+<script type="module" src="/web/main.js"></script>
+</body>
+</html>
