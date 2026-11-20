@@ -36,6 +36,7 @@ Công cụ: Claude Code (Sonnet 5.5) trong VS Code.
 - Prompt chính: dán nguyên TICKET-04. Thứ tự làm: lõi dùng chung (`src/leaderboard.js`, `src/keybinds.js`, `src/bench.js`, cờ `bench` trong `Sim`) → script (`serve.js` + API/export, `soak.mjs`, `bench.mjs`, `make-release.mjs`) → giao diện → test → tài liệu.
 - Đo rồi mới tối ưu: bench lần đầu trên Intel UHD 63.7 FPS / p1-low 14.9 (không đạt). Thêm số đo chẩn đoán (CPU sim, CPU render, draw call) → thủ phạm là `renderer.render` với ~800 draw call của 200 Bóng Mực. Chuyển sang InstancedMesh và chỉ cập nhật shadow map khi cần → 105.6 / 36.5.
 - Soak: lần đầu RSS 45 → 55 MB (vượt 1.2×). Chạy 100 Đêm thấy RSS đi ngang ~58 MB → là JIT/heap của V8, không phải rò rỉ. Đo sau gc, coi 1 giây chạy thử là phần "tải xong Đêm đầu", và giới hạn vùng nhớ tạm của V8 trong `soak_cmd` → 47 → 51 MB, ổn định qua nhiều lần chạy.
+- CI (GitHub Actions, Linux Node 22): test soak trượt (48 → 61 MB). Tái hiện bằng Docker `node:22-slim`; 100 Đêm vẫn 61 MB nên là phần tăng một lần khi gặp Đêm 2/3 lần đầu, không phải rò rỉ. Sửa: chạy thử một Đêm bỏ đi cho mỗi loại Đêm trước khi đo `mem_start`. Sau sửa: Linux Node 22 57 → 57, Node 24 70 → 70 (100 Đêm: 69 → 72), Windows 52 → 50; 75/75 test trên Windows và trên Linux Node 22.
 - Lỗi môi trường: `tar` của Git Bash hiểu `E:` là máy từ xa → dùng đường dẫn tương đối.
 - 17 test mới (75 tổng), đạt ngay lần đầu.
 - Token/chi phí: ước tính 150-200k token (ước tính, không phải số đo).

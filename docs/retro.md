@@ -34,6 +34,7 @@
 | P3 | Giả định đèn "đầy 100" bị bỏ qua khi bấm E; thực tế hao dầu chạy trước tương tác nên không bao giờ đầy đúng 100 | Test fail; đọc lại thứ tự tick của ticket; ghi vào ADR |
 | P3 | Tính sai khoảng cách Mây–Bóng Mực (7 m chứ không < 6 m) và thời gian tới đèn | Test fail, tính lại bằng tay |
 | P4 | Soak lần đầu vượt ngưỡng 1.2× RSS (45 → 55 MB) | Chạy lặp nhiều lần và chạy 100 Đêm: RSS đi ngang (JIT/heap), không phải rò rỉ; đo sau khi gc và sau 1 s chạy thử |
+| P4 | Soak đạt trên Windows nhưng trượt trên GitHub Actions/Linux (48 → 61 MB): chạy thử chỉ Đêm 1, chưa tính phần tăng một lần khi gặp Đêm 2/3 | CI đỏ → tái hiện bằng Docker Linux, chạy 100 Đêm thấy đi ngang → chạy thử cả ba loại Đêm trước khi đo |
 | P4 | Bench p1-low 15 FPS (không đạt) | Đo có chẩn đoán (CPU sim 0.4 ms, phần lớn ở `renderer.render`), xác định 800 draw call của Bóng Mực → instancing |
 
 ## 4. Harness giúp nhiều nhất

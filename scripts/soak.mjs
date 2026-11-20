@@ -19,25 +19,30 @@ const t0 = process.hrtime.bigint();
 const results = [];
 let crashes = 0, memStart = null, memEnd = null;
 
+// one night with random inputs from `s`; returns the finished Sim
+const playNight = (s, night) => {
+  const sim = new Sim({ seed: s, night });
+  const rng = mulberry32(s);
+  let move = [0, 0];
+  const maxTicks = T_NIGHT_TICKS[night];
+  for (let tk = 0; tk < maxTicks && (sim.state === 'playing' || sim.state === 'paused'); tk++) {
+    if (tk % 30 === 0) { const a = rng() * Math.PI * 2; move = [Math.cos(a), Math.sin(a)]; }
+    sim.step({ move, cam_yaw_deg: 0, jump: rng() < 0.05, dash: rng() < 0.03, pulse: rng() < 0.02, interact: rng() < 0.1 });
+  }
+  return sim;
+};
+
+// "loaded" = the engine has compiled the code of all three maps (one throw-away night of each, seeds unrelated to
+// the soak seeds) and the first night is built. Otherwise V8's one-time JIT/heap growth on the first Night 2 and 3
+// (~12 MB on Linux, flat from night 6 to night 100) is mistaken for a leak. Results of the soak nights do not change.
+for (let n = 1; n <= 3; n++) playNight(1000000 + n, n);
+
 for (let i = 0; i < nights; i++) {
   const night = (i % 3) + 1;
   let sim = null;
   try {
-    sim = new Sim({ seed: seed + i, night });
-    if (i === 0) {
-      // "loaded" = the first night is built and has run its first second (code paths compiled, spawns made),
-      // so JIT warm-up of the engine is not mistaken for growth later on
-      for (let w = 0; w < 60; w++) sim.step({});
-      sim = new Sim({ seed: seed + i, night });
-      memStart = rssMb();
-    }
-    const rng = mulberry32(seed + i);
-    let move = [0, 0];
-    const maxTicks = T_NIGHT_TICKS[night];
-    for (let tk = 0; tk < maxTicks && (sim.state === 'playing' || sim.state === 'paused'); tk++) {
-      if (tk % 30 === 0) { const a = rng() * Math.PI * 2; move = [Math.cos(a), Math.sin(a)]; }
-      sim.step({ move, cam_yaw_deg: 0, jump: rng() < 0.05, dash: rng() < 0.03, pulse: rng() < 0.02, interact: rng() < 0.1 });
-    }
+    if (i === 0) { sim = new Sim({ seed, night }); memStart = rssMb(); sim = null; }
+    sim = playNight(seed + i, night);
     results.push(sim.state === 'won' ? 'won' : 'lost');
   } catch (e) {
     crashes += 1;

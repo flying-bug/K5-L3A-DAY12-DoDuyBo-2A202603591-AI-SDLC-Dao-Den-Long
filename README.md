@@ -79,7 +79,7 @@ Kết quả trên máy làm bài ([bench.json](bench.json)): **avg 105.6 FPS, p1
 node --max-semi-space-size=1 scripts/soak.mjs --seed 7 --nights 10 --out soak.json
 ```
 
-10 Đêm (1→2→3 xoay vòng) trong một tiến trình, input ngẫu nhiên theo seed. Kết quả ([soak.json](soak.json)): **0 crash, RSS 47 → 51 MB** (ngưỡng ≤ 1.2×).
+10 Đêm (1→2→3 xoay vòng) trong một tiến trình, input ngẫu nhiên theo seed. Kết quả ([soak.json](soak.json)): **0 crash, RSS 52 → 50 MB** (ngưỡng ≤ 1.2×). Trước khi đo `mem_start`, chạy thử một Đêm bỏ đi cho mỗi loại Đêm 1/2/3 để V8 biên dịch xong mã của cả ba bản đồ; kết quả 10 Đêm không đổi. Đã chạy trên Windows (Node 24) và Linux (Node 22, 24): RSS đi ngang kể cả khi chạy 100 Đêm.
 
 ## Bảng xếp hạng
 
