@@ -20,3 +20,13 @@ Công cụ: Claude Code (Sonnet 5.5) trong VS Code.
 - Bản 3D lần đầu chỉ ~20-25 FPS khi render bằng CPU; tắt antialias và thêm hạ độ phân giải tự động → ~33-38 FPS (cùng môi trường).
 - Token/chi phí: chưa có số đo; ước tính 150-200k token cho Phase 2 (ước tính, không phải số đo).
 - Chưa làm: nghe thử âm thanh, chơi tay qua cả ba Đêm, video, Release.
+
+## Phase 3 (Ticket-03, Change Request)
+
+- Prompt chính: dán nguyên TICKET-03. Quyết định: viết ADR + CHANGELOG + spec-phase3 (AC từng mục) trước, rồi sửa `Sim`, rồi test, rồi giao diện.
+- Cách làm luật đổi: lưu dầu bằng số nguyên 1/60 (đúng gợi ý ticket); thêm `_fuelStep()` sau bước 2; viết lại `_interact`, `_moveShades`, điều kiện thắng/thua; vá `sim.js` bằng script Python có `assert` số lần khớp để không sửa nhầm chỗ.
+- Test: chạy bộ test cũ trước khi sửa test để thấy chính xác 7 test bị luật mới làm sai (contract, tick 0, deposit, 2 test thắng sớm, shade states, perf Đêm 3), sau đó sửa/xóa kèm lý do, rồi thêm 22 test mới. Cuối cùng 58/58.
+- Phát hiện khi viết test (không phải lỗi của AI hay của ticket): do hao dầu chạy trước tương tác, đèn "đầy đúng 100" không tồn tại lúc bấm E, nhánh `used = 0` gần như không thể xảy ra. Ghi vào ADR, giữ nguyên thứ tự theo ticket.
+- Lỗi do chính mình viết sai kỳ vọng ở 4 test mới (khoảng cách Mây-Bóng Mực 7 m thay vì < 6 m, ngưỡng tick đến đèn, cho rằng đèn 100 là đầy). Đã sửa test cho khớp luật, không nới điều kiện.
+- Token/chi phí: chưa có số đo; ước tính 120-170k token cho Phase 3 (ước tính, không phải số đo).
+- Chưa làm: chơi tay hết một Đêm theo luật mới, video, Release.

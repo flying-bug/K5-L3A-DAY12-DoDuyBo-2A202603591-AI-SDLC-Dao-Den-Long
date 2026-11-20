@@ -9,9 +9,9 @@ export const TUNING = {
   interact_radius: 2.0,
   pulse_cost: 3,
   pulse_radius: 5,
-  night1_duration_s: 300,
-  night2_duration_s: 330,
-  night3_duration_s: 360,
+  night1_duration_s: 240,
+  night2_duration_s: 270,
+  night3_duration_s: 300,
   flames: 3,
   invuln_s: 1.5,
   hit_drop_ratio: 0.5,
@@ -25,7 +25,19 @@ export const TUNING = {
   dash_speed: 14,
   dash_duration_s: 0.2,
   dash_cooldown_s: 1.5,
-  score: { per_mote: 10, per_lantern: 100, per_stun: 5, per_second_left: 2, per_flame_left: 50 },
+  // Ticket-03 (Contract v1.2): lantern fuel, dawn win, growing capacity
+  fuel_max: 100,
+  fuel_decay_per_s: 1.0,
+  fuel_per_mote: 10,
+  relight_cost: 5,
+  win_ratio: 0.6,
+  drain_per_s: 5,
+  low_fuel_threshold: 30,
+  capacity_max: 20,
+  capacity_per_light: 2,
+  // per_second_left is 0: the time bonus was removed. per_lantern = first light, per_relight = relight.
+  // per_stun_drain is the TOTAL for a shade hit while draining. per_lit_lantern_dawn is +50 (+floor(fuel)) per lit lantern.
+  score: { per_mote: 5, per_lantern: 100, per_relight: 40, per_stun: 5, per_stun_drain: 15, per_second_left: 0, per_flame_left: 50, per_lit_lantern_dawn: 50 },
 };
 
 // Non-contract constants (all from Ticket-02 unless marked [assumption]).
@@ -54,6 +66,8 @@ export const WORLD = {
   shade_first_spawn_tick: 300,
   shade_min_player_dist: 15,
   expel_ticks: 30,
+  drain_radius: 2, // shade stops this close (XZ) to a weak lantern and starts draining
+  drain_chase_radius: 6, // Mây within this distance pulls a draining shade off the lantern
   pulse_center_y: 0.8,
   charm_ticks: 600,
   charm_speed: 7.2,

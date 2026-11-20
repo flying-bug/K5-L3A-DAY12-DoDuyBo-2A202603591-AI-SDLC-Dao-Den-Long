@@ -1,5 +1,7 @@
 # Spec Phase 2 (Ticket-02) và tiêu chí nghiệm thu
 
+> **Một phần đã bị Ticket-03 thay thế** (thắng sớm khi đủ đèn, thời lượng Đêm, chi phí thắp, điểm, vùng an toàn luôn có, hết choáng về chase). Xem [CHANGELOG](../../CHANGELOG.md) và [spec-phase3.md](spec-phase3.md). Nội dung dưới đây giữ nguyên làm lịch sử.
+
 Nguồn số liệu: `src/config.js` + `src/levels.js` (khớp `game.contract.json` v1.1). Mỗi tiêu chí có test tương ứng trong `tests/headless.test.js` (tên test ghi ở cột phải).
 
 ## Phần 3 — Tính năng mới

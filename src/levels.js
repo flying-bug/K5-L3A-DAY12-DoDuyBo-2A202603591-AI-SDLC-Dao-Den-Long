@@ -16,7 +16,7 @@ function toward(from, to) {
 // ---------- Night 1: Dao Ben ----------
 const night1 = {
   id: 1,
-  name: 'Đảo Bến',
+  name: 'Làng quê Bắc Bộ',
   duration_key: 'night1_duration_s',
   start: [0, 0, 0],
   lanterns: [[0, 0, 25], [23.8, 0, 7.7], [14.7, 0, -20.2], [-14.7, 0, -20.2], [-23.8, 0, 7.7]],
@@ -38,7 +38,7 @@ const night1 = {
 const A = [0, 0], B = [70, 0];
 const night2 = {
   id: 2,
-  name: 'Đảo Cau',
+  name: 'Phố cổ Hội An',
   duration_key: 'night2_duration_s',
   start: [0, 0, 0],
   lanterns: [[0, 0, 20], [17, 0, -10], [-17, 0, -10], [70, 0, 20], [87, 0, -10], [53, 0, -10]],
@@ -82,7 +82,7 @@ function surface3(x, z) {
 }
 const night3 = {
   id: 3,
-  name: 'Đảo Chuông',
+  name: 'Cố đô Huế',
   duration_key: 'night3_duration_s',
   start: [0, 0, -20], // [assumption] the centre is the bell tower, so the spawn is on the low floor
   lanterns: [[0, 6, 6], [18, 3, 10], [-18, 3, 10], [35, 0, -10], [-35, 0, -10], [20, 0, -35], [-20, 0, -35]],

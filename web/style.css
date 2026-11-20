@@ -5,6 +5,7 @@ canvas{display:block}
 .hidden{display:none!important}
 #hud{position:fixed;inset:0;pointer-events:none;text-shadow:0 1px 4px #000}
 #flames{position:absolute;top:14px;left:18px;font-size:30px;letter-spacing:4px}
+body.cb #clock.low{text-decoration:underline}
 #flames .off{filter:grayscale(1) brightness(.4)}
 #clock{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-size:36px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
 #clock.low{color:var(--danger);animation:blink .5s steps(2) infinite}
@@ -38,4 +39,6 @@ button{font:inherit;font-size:20px;padding:10px 22px;border-radius:12px;border:2
 button:hover,button:focus{background:var(--lamp);color:#0E1430;outline:none}
 label.row{display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:20px;margin:8px 0;min-width:320px}
 input[type=range]{width:180px}
+#fuelwarn{position:absolute;top:300px;right:18px;max-width:240px;text-align:right;color:var(--danger);font-weight:700;font-size:16px;line-height:1.4}
+#motecount{position:absolute;bottom:52px;left:50%;transform:translateX(-50%);font-size:16px;color:var(--core)}
 #minimap{position:absolute;top:112px;right:18px;width:180px;height:180px;border-radius:50%;border:3px solid var(--gold);background:#0E1430cc;box-shadow:0 0 14px #000a}

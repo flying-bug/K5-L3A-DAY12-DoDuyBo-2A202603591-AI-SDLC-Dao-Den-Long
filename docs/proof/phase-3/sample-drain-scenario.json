@@ -1,0 +1,1 @@
+{"random_motes":false,"random_shades":false,"player":{"pos":[0,0,-40]},"lanterns":[{"id":"L1","pos":[0,0,10],"lit":true,"fuel":20}],"shades":[{"id":"S1","pos":[0,0,20],"state":"wander"}],"time_left_s":200}

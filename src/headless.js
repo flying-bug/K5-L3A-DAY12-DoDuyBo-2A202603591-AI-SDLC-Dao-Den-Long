@@ -58,7 +58,7 @@ function validateScenario(s) {
   if (p !== undefined) {
     if (typeof p !== 'object' || p === null) throw new UsageError('scenario.player must be an object');
     if ('pos' in p && !isVec3(p.pos)) throw new UsageError('scenario.player.pos must be [x,y,z]');
-    for (const k of ['carried', 'flames', 'invuln_ticks', 'dash_cd_ticks', 'pulse_cd_ticks', 'charm_ticks']) if (k in p && !Number.isInteger(p[k])) throw new UsageError(`scenario.player.${k} must be an integer`);
+    for (const k of ['carried', 'flames', 'invuln_ticks', 'dash_cd_ticks', 'pulse_cd_ticks', 'charm_ticks', 'successful_lights']) if (k in p && !Number.isInteger(p[k])) throw new UsageError(`scenario.player.${k} must be an integer`);
   }
   for (const k of ['random_motes', 'random_shades', 'random_drifters', 'wind_enabled']) if (k in s && typeof s[k] !== 'boolean') throw new UsageError(`scenario.${k} must be boolean`);
   if ('time_left_s' in s && !(isNum(s.time_left_s) && s.time_left_s >= 0)) throw new UsageError('scenario.time_left_s must be a number >= 0');
@@ -68,6 +68,7 @@ function validateScenario(s) {
     for (const x of s.shades) {
       if ('state' in x && !SHADE_STATES.includes(x.state)) throw new UsageError(`scenario.shades[].state must be one of ${SHADE_STATES.join(',')}`);
       if ('state_ticks_left' in x && !(Number.isInteger(x.state_ticks_left) && x.state_ticks_left >= 0)) throw new UsageError('scenario.shades[].state_ticks_left must be a non-negative integer');
+      if ('target_lantern_id' in x && typeof x.target_lantern_id !== 'string') throw new UsageError('scenario.shades[].target_lantern_id must be a string');
     }
   }
   if ('drifters' in s) {
@@ -87,6 +88,9 @@ function validateScenario(s) {
       if ('pos' in l && !isVec3(l.pos)) throw new UsageError('scenario.lanterns[].pos must be [x,y,z]');
       if ('deposited' in l && !Number.isInteger(l.deposited)) throw new UsageError('scenario.lanterns[].deposited must be an integer');
       if ('lit' in l && typeof l.lit !== 'boolean') throw new UsageError('scenario.lanterns[].lit must be boolean');
+      if ('ever_lit' in l && typeof l.ever_lit !== 'boolean') throw new UsageError('scenario.lanterns[].ever_lit must be boolean');
+      if ('fuel' in l && !(isNum(l.fuel) && l.fuel >= 0 && l.fuel <= 100)) throw new UsageError('scenario.lanterns[].fuel must be a number in [0,100]');
+      if ('relit_count' in l && !(Number.isInteger(l.relit_count) && l.relit_count >= 0)) throw new UsageError('scenario.lanterns[].relit_count must be a non-negative integer');
     }
   }
   return s;
