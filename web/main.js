@@ -3,6 +3,7 @@ import { Sim } from '/src/sim.js';
 import { TUNING as T, WORLD as W } from '/src/config.js';
 import { NIGHTS } from '/src/levels.js';
 import * as audio from '/web/audio.js';
+import { buildDecor } from '/web/decor.js';
 
 // ---------- palette (Ticket-02) ----------
 const C = {
@@ -51,14 +52,46 @@ const glowTex = radialTex([[0, 'rgba(255,190,100,0.75)'], [0.35, 'rgba(255,170,7
 const shadowTex = radialTex([[0, 'rgba(0,0,0,0.45)'], [0.6, 'rgba(0,0,0,0.2)'], [1, 'rgba(0,0,0,0)']]);
 
 // ---------- level geometry ----------
-let levelGroup = null;
+let levelGroup = null, decor = null;
 function disposeGroup(g) {
   g.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
   scene.remove(g);
 }
 const cyl = (r, h, color, x, y, z, seg = 48) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg), mat(color)); m.position.set(x, y, z); return m; };
+const hash = (x, y, z) => { const v = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719) * 43758.5453; return v - Math.floor(v); };
+function grassTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const x = c.getContext('2d');
+  x.fillStyle = '#2F5D50'; x.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 1800; i++) {
+    const k = Math.random();
+    x.fillStyle = k < 0.4 ? '#27503f' : k < 0.8 ? '#3d7a58' : k < 0.93 ? '#5b8f5a' : '#C9B48A';
+    x.globalAlpha = 0.5; x.fillRect(Math.random() * 256, Math.random() * 256, 2 + Math.random() * 4, 2 + Math.random() * 4);
+  }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const grassTex = grassTexture();
+const grassMat = () => { const t = grassTex.clone(); t.needsUpdate = true; t.repeat.set(8, 8); return new THREE.MeshLambertMaterial({ map: t }); };
+const rockMat = new THREE.MeshLambertMaterial({ color: 0x6b4a3a, flatShading: true });
 function island(g, cx, cz, r) {
-  g.add(cyl(r, 2, C.grass, cx, -1, cz), cyl(r + 0.8, 1.6, C.sand, cx, -1.3, cz), cyl(r - 4, 0.05, 0x356b5c, cx, 0.02, cz));
+  // flat grass top at y=0 (sim ground), thin warm beach, and a jagged brown rock underside so the island floats
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.6, 56), [rockMat, grassMat(), rockMat]);
+  top.position.set(cx, -0.3, cz); g.add(top);
+  const beach = new THREE.Mesh(new THREE.RingGeometry(r - 1.0, r - 0.05, 56), mat(0xb89a68));
+  beach.rotation.x = -Math.PI / 2; beach.position.set(cx, 0.012, cz); g.add(beach);
+  const geo = new THREE.CylinderGeometry(r, r * 0.18, 16, 28, 5, true);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    if (y > 7.9) continue;
+    const j = (hash(Math.round(x * 2), Math.round(y), Math.round(z * 2)) - 0.5) * 3.2;
+    pos.setXYZ(i, x + j * (x / r), y + j * 0.4, z + j * (z / r));
+  }
+  geo.computeVertexNormals();
+  const rock = new THREE.Mesh(geo, rockMat); rock.position.set(cx, -8.6, cz); g.add(rock);
+  // glowing ember-red fringe where the grass meets the rock: festival feel without lighting anything
+  const fringe = new THREE.Mesh(new THREE.TorusGeometry(r - 0.1, 0.12, 6, 64), mat(0xc8102e)); fringe.rotation.x = Math.PI / 2; fringe.position.set(cx, -0.55, cz); g.add(fringe);
 }
 function padMesh(p) {
   const g = new THREE.Group();
@@ -80,16 +113,16 @@ function buildLevel(n) {
     for (let x = 27; x <= 43; x += 2) { const pl = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.1, 4.1), mat(0x4a3220)); pl.position.set(x, 0.02, 0); g.add(pl); }
   }
   if (n === 3) {
-    g.add(cyl(45, 2, C.grass, 0, -1, 0), cyl(46, 1.6, C.sand, 0, -1.3, 0));
+    island(g, 0, 0, 45);
     // tier 1: half annulus r 12..24 on z>0, height 3 (extruded along +Y)
     const sh = new THREE.Shape();
     const pts = 24;
     for (let i = 0; i <= pts; i++) { const a = (i / pts) * Math.PI; const x = 24 * Math.cos(a), y = -24 * Math.sin(a); if (i === 0) sh.moveTo(x, y); else sh.lineTo(x, y); }
     for (let i = pts; i >= 0; i--) { const a = (i / pts) * Math.PI; sh.lineTo(12 * Math.cos(a), -12 * Math.sin(a)); }
-    const t1 = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 3, bevelEnabled: false }), mat(0x3a6d5d));
+    const t1 = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 3, bevelEnabled: false }), [grassMat(), rockMat]);
     t1.rotation.x = -Math.PI / 2;
     g.add(t1);
-    g.add(cyl(8, 6, 0x42786a, 0, 3, 0));
+    { const t2 = new THREE.Mesh(new THREE.CylinderGeometry(8, 8, 6, 36), [rockMat, grassMat(), rockMat]); t2.position.set(0, 3, 0); g.add(t2); }
     // ramps
     for (const a of [30, 150]) {
       const ph = (a * Math.PI) / 180;
@@ -113,6 +146,8 @@ function buildLevel(n) {
   for (let i = 0; i < 300; i++) { const a = Math.random() * Math.PI * 2, e = 0.15 + Math.random() * 1.2, r = 220; sp[i * 3] = r * Math.cos(a) * Math.cos(e); sp[i * 3 + 1] = r * Math.sin(e); sp[i * 3 + 2] = r * Math.sin(a) * Math.cos(e); }
   const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
   g.add(new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xf5f1e6, size: 1.2, fog: false })));
+  decor = buildDecor(n, L);
+  g.add(decor.group);
   scene.add(g);
   levelGroup = g;
 }
@@ -162,10 +197,16 @@ function makeShade() {
   return g;
 }
 function makeDrifter() {
+  // a wavy silk ribbon (grey-blue) with a trailing tail and a pale knot, animated in render()
   const g = new THREE.Group();
-  const rib = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.05, 2.6, 1, 1, 8), mat(C.drifter, { side: THREE.DoubleSide, transparent: true, opacity: 0.85 }));
-  g.add(rib);
-  g.userData = { rib };
+  const geo = new THREE.PlaneGeometry(3.6, 0.9, 16, 1);
+  const rib = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: C.drifter, side: THREE.DoubleSide, transparent: true, opacity: 0.92 }));
+  const knot = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), basic(0xdfe8f2));
+  knot.position.x = 1.8;
+  const aura = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0x8fa3b8, transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+  aura.scale.setScalar(5);
+  g.add(rib, knot, aura);
+  g.userData = { rib, base: Float32Array.from(geo.attributes.position.array) };
   scene.add(g);
   return g;
 }
@@ -408,7 +449,11 @@ function render(dt, t) {
   });
   syncMap(ents.drifters, sim.drifters, makeDrifter, (g, d) => {
     g.position.set(d.pos[0], d.pos[1] + Math.sin(t * 3) * 0.2, d.pos[2]);
-    g.rotation.y = t * 2; g.rotation.z = Math.sin(t * 6) * 0.4;
+    const dir = Math.atan2(d.state === 'flee' ? d.pos[0] - P.pos[0] : P.pos[0] - d.pos[0], d.state === 'flee' ? d.pos[2] - P.pos[2] : P.pos[2] - d.pos[2]);
+    g.rotation.y = d.state === 'idle' ? t * 0.6 : dir - Math.PI / 2;
+    const arr = g.userData.rib.geometry.attributes.position.array, base = g.userData.base;
+    for (let i = 0; i < arr.length; i += 3) { const k = 1 - (base[i] + 1.8) / 3.6; arr[i + 1] = base[i + 1] + Math.sin(base[i] * 2.2 - t * 7) * 0.55 * (0.3 + k); arr[i + 2] = Math.cos(base[i] * 2.2 - t * 7) * 0.35 * k; }
+    g.userData.rib.geometry.attributes.position.needsUpdate = true;
   });
   for (const c of sim.charms) { const m = ents.charms.get(c.id); m.visible = c.respawn === 0; m.rotation.y = t * 2; m.position.y = c.pos[1] + 1.1 + Math.sin(t * 2) * 0.12; }
 
@@ -430,7 +475,9 @@ function render(dt, t) {
     lv.geometry.attributes.position.needsUpdate = true;
   }
 
+  if (decor && decor.update(t, dt, P.pos).rustle) audio.sfx.rustle();
   updateHud(lit, t);
+  drawMinimap(t);
   renderer.render(scene, camera);
 }
 
@@ -498,6 +545,60 @@ function updateHud(lit, t) {
   } else arrowEl.classList.add('hidden');
 }
 
+// ---------- minimap (view only; up = camera forward) ----------
+const MAP_SHAPES = {
+  1: [['c', 0, 0, 40]],
+  2: [['c', 0, 0, 28], ['c', 70, 0, 28], ['r', 26, -2, 18, 4]],
+  3: [['c', 0, 0, 45], ['c', 0, 0, 8, 'hi']],
+};
+const mapCv = $('minimap'), mapCtx = mapCv.getContext('2d');
+const MAP_RANGE = 42; // metres from the centre to the rim
+function drawMinimap(t) {
+  const W2 = mapCv.width, cx = W2 / 2, rad = cx - 3, sc = rad / MAP_RANGE;
+  const P = sim.player, th = (yaw * Math.PI) / 180;
+  const fx = Math.sin(th), fz = Math.cos(th), rx = -Math.cos(th), rz = Math.sin(th);
+  const proj = (x, z) => { const dx = x - P.pos[0], dz = z - P.pos[2]; return [cx + sc * (dx * rx + dz * rz), cx - sc * (dx * fx + dz * fz)]; };
+  mapCtx.clearRect(0, 0, W2, W2);
+  mapCtx.save();
+  mapCtx.beginPath(); mapCtx.arc(cx, cx, rad, 0, Math.PI * 2); mapCtx.clip();
+  // terrain in world coordinates
+  mapCtx.setTransform(sc * rx, -sc * fx, sc * rz, -sc * fz, cx - (sc * rx * P.pos[0] + sc * rz * P.pos[2]), cx - (-sc * fx * P.pos[0] - sc * fz * P.pos[2]));
+  for (const [kind, a, b, c, d] of MAP_SHAPES[nightNo]) {
+    mapCtx.fillStyle = d === 'hi' ? '#4a8f6a' : '#2f5d50';
+    mapCtx.strokeStyle = '#C9B48A'; mapCtx.lineWidth = 1 / sc;
+    mapCtx.beginPath();
+    if (kind === 'c') mapCtx.arc(a, b, c, 0, Math.PI * 2); else mapCtx.rect(a, b, c, d);
+    mapCtx.fill(); if (d !== 'hi') mapCtx.stroke();
+  }
+  mapCtx.setTransform(1, 0, 0, 1, 0, 0);
+  const pulse = 0.6 + 0.4 * Math.sin(t * 5);
+  const edge = (x, y) => { const dx = x - cx, dy = y - cx, l = Math.hypot(dx, dy), m = rad - 9; return l > m ? [cx + (dx / l) * m, cx + (dy / l) * m, true] : [x, y, false]; };
+  // game objects
+  for (const c of sim.charms) if (c.respawn === 0) { const [x, y] = proj(c.pos[0], c.pos[2]); mapCtx.fillStyle = '#C8102E'; mapCtx.fillRect(x - 3, y - 3, 6, 6); mapCtx.strokeStyle = '#F2C14E'; mapCtx.strokeRect(x - 3, y - 3, 6, 6); }
+  for (const d of sim.drifters) { const [x, y] = proj(d.pos[0], d.pos[2]); mapCtx.fillStyle = '#8FA3B8'; mapCtx.beginPath(); mapCtx.moveTo(x, y - 5); mapCtx.lineTo(x + 4, y); mapCtx.lineTo(x, y + 5); mapCtx.lineTo(x - 4, y); mapCtx.fill(); }
+  for (const s of sim.shades) { const [x, y] = proj(s.pos[0], s.pos[2]); mapCtx.fillStyle = s.state === 'stunned' ? '#3A3450' : '#7A3CFF'; mapCtx.beginPath(); mapCtx.arc(x, y, 4, 0, Math.PI * 2); mapCtx.fill(); mapCtx.strokeStyle = '#120A1A'; mapCtx.stroke(); }
+  let nearest = null, nd = Infinity;
+  for (const l of sim.lanterns) if (!l.lit) { const d = Math.hypot(l.pos[0] - P.pos[0], l.pos[2] - P.pos[2]); if (d < nd) { nd = d; nearest = l; } }
+  for (const l of sim.lanterns) {
+    const [px, py] = proj(l.pos[0], l.pos[2]);
+    if (l.lit) { mapCtx.fillStyle = '#FFB347'; mapCtx.beginPath(); mapCtx.arc(px, py, 4, 0, Math.PI * 2); mapCtx.fill(); continue; }
+    const [x, y, clamped] = edge(px, py);
+    const target = l === nearest;
+    mapCtx.strokeStyle = target ? '#FF5A5F' : '#F2C14E'; mapCtx.lineWidth = target ? 3 : 2;
+    mapCtx.globalAlpha = target ? pulse : 0.9;
+    mapCtx.beginPath(); mapCtx.arc(x, y, (target ? 8 : 6) + (clamped ? 0 : 0), 0, Math.PI * 2); mapCtx.stroke();
+    mapCtx.fillStyle = '#5B5F6E'; mapCtx.beginPath(); mapCtx.arc(x, y, 3, 0, Math.PI * 2); mapCtx.fill();
+    mapCtx.globalAlpha = 1;
+  }
+  // player (always centre, pointing up; the map rotates with the camera)
+  const ang = Math.atan2(P.face[0] * rx + P.face[1] * rz, P.face[0] * fx + P.face[1] * fz); // facing relative to camera
+  mapCtx.save(); mapCtx.translate(cx, cx); mapCtx.rotate(ang);
+  mapCtx.fillStyle = '#F5F1E6'; mapCtx.strokeStyle = '#C8102E'; mapCtx.lineWidth = 2;
+  mapCtx.beginPath(); mapCtx.moveTo(0, -8); mapCtx.lineTo(6, 7); mapCtx.lineTo(0, 3); mapCtx.lineTo(-6, 7); mapCtx.closePath(); mapCtx.fill(); mapCtx.stroke();
+  mapCtx.restore();
+  mapCtx.restore();
+}
+
 // ---------- main loop ----------
 let last = performance.now(), fpsN = 0, fpsT = 0;
 window.__ddl = { fps: 0, get sim() { return sim; }, get screen() { return screen; }, startNight };
@@ -533,7 +634,7 @@ let lowSecs = 0;
 function adaptResolution(fps) {
   if (screen !== 'play') { lowSecs = 0; return; }
   lowSecs = fps < 32 ? lowSecs + 1 : 0;
-  if (lowSecs >= 2 && pixelRatio > 0.55) {
+  if (lowSecs >= 1 && pixelRatio > 0.55) {
     pixelRatio = Math.max(0.55, pixelRatio - 0.15);
     renderer.setPixelRatio(pixelRatio); renderer.setSize(innerWidth, innerHeight);
     lowSecs = 0;

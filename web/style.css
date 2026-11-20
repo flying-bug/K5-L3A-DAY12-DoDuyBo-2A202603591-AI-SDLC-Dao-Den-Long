@@ -38,3 +38,4 @@ button{font:inherit;font-size:20px;padding:10px 22px;border-radius:12px;border:2
 button:hover,button:focus{background:var(--lamp);color:#0E1430;outline:none}
 label.row{display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:20px;margin:8px 0;min-width:320px}
 input[type=range]{width:180px}
+#minimap{position:absolute;top:112px;right:18px;width:180px;height:180px;border-radius:50%;border:3px solid var(--gold);background:#0E1430cc;box-shadow:0 0 14px #000a}

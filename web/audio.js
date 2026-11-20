@@ -60,6 +60,7 @@ export const sfx = {
   win: () => [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.5, 'sine', 0.16, null, i * 0.12)),
   lose: () => [440, 370, 311, 247].forEach((f, i) => tone(f, 0.55, 'triangle', 0.15, null, i * 0.18)),
   click: () => tone(700, 0.05, 'triangle', 0.1),
+  rustle: () => noise(0.18, 0.07, 3500),
 };
 
 // Night music: a soft drone plus sparse pentatonic bells.
