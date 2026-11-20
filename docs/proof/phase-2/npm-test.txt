@@ -1,0 +1,49 @@
+
+> dao-den-long@0.1.0 test
+> node --test "tests/*.test.js"
+
+✔ contract: v1.1, tuning equals src/config.js and the standard numbers (3.4938ms)
+✔ tick 0 snapshot (before input), end line, tick counting, time_left, night field (341.9206ms)
+✔ movement: 6 m/s along +Z, normalised diagonal, camera yaw (283.33ms)
+✔ pickup: radius 1.0 XZ, height gap <= 1.5, capacity 10 (130.4519ms)
+✔ deposit: min(carried, missing), remembers progress, nearest-then-lowest-id, radius 2.0; score 10/mote + 100/lantern (354.0642ms)
+✔ win: all lit -> score = deposits + lanterns + floor(time_left)*2 + 50*flames (70.6502ms)
+✔ win on the exact tick time runs out; plain timeout is lost/dawn (134.0818ms)
+✔ shade hit: -1 flame, drop floor(carried/2) on a 1.5-2.5 m ring (ttl 8 s), 90-tick invulnerability, recoil, then no_flames (72.4479ms)
+✔ dropped motes expire after their ttl (62.5184ms)
+✔ pulse: 3 motes, radius 5 (3D from foot+0.8), +5 per shade, stun 120 ticks, push 4 m in 15 ticks, cooldown 3 s (85.305ms)
+✔ pulse needs 3 motes; coincident shade is pushed toward +X (135.6603ms)
+✔ safe radius: shade is held at 6 m from a lit lantern; lighting expels shades inside without damage (159.9113ms)
+✔ jump: ~1.2 m apex, lands, no double jump (146.4068ms)
+✔ determinism with random motes/shades/drifters; different seed differs; spawn tables (255.3209ms)
+✔ bad inputs/scenario/args -> exit code 2 (482.4495ms)
+✔ spawn schedules: shades at tick 300 (x2) then every 8/7/6 s, capped; spawning -> wander next tick; ids S1.. (599.8759ms)
+✔ mote spawns: 20 distinct start points, +1 every 240 ticks to the cap 30, skip when no free point (238.7523ms)
+✔ Night 1 map: lanterns, start and spawn geometry (73.2502ms)
+✔ dash: 14 m/s for 12 ticks, 1.5 s cooldown from its start, facing used when still, not invulnerable (146.2552ms)
+✔ dash in the air keeps its height (69.8677ms)
+✔ fall: once, -1 flame, lose all motes, 60-tick wait, respawn at start with 90 invuln; last flame -> lost (149.1198ms)
+✔ fall ignores invulnerability and nothing can hit or pick up while waiting (76.7336ms)
+✔ Night 2: bridge is walkable, void beside it is not (145.3518ms)
+✔ Night 2 jump pad: launches at 14 m/s up, 24 m/s toward the other island, ignores keys, lands on it (148.4987ms)
+✔ Night 2 map: lanterns L1..L6 and charm position (68.1892ms)
+✔ Night 3: ramp up to tier 1, cliffs block, tier 2 reachable by the pad, tower is solid (388.2574ms)
+✔ Night 3 wind: warn 2 s, 5 s gust every 30 s pushing 2 m/s (172.9444ms)
+✔ Gió Lạc: spawns at 1200, 2400 (max 2), id D#, idle -> chase when carrying >= 5 within 15 m (371.1684ms)
+✔ Gió Lạc steals min(3, carried) once, flees 240 ticks and vanishes; no flame loss; invulnerability does not help (157.1883ms)
+✔ Tỏa Sáng: chasing Gió Lạc flees without stealing; fleeing thief drops the loot and leaves within 120 ticks (144.5789ms)
+✔ Bùa Gió: pickup event, 600 ticks, 7.2 m/s, respawn 2700 ticks; dash has no cooldown (335.682ms)
+✔ Bùa Gió: standard positions per night (241.0512ms)
+✔ pause: tick advances, sim_tick/time/spawns/cooldowns freeze; paused/resumed events (70.6376ms)
+✔ shade states use the v1.1 names; scenario can set state and ticks left (71.553ms)
+✔ shade loses a target farther than 18 m (hysteresis 12 / 18) (135.8746ms)
+✔ shade cannot climb cliffs (Night 3, stuck below tier 2) (80.3462ms)
+✔ full Night 3 headless run finishes well under 30 s (385.8099ms)
+ℹ tests 37
+ℹ suites 0
+ℹ pass 37
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7121.0695

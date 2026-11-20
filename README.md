@@ -1,8 +1,8 @@
-# Đảo Đèn Lồng (Phase 1)
+# Đảo Đèn Lồng (Phase 2: ba hòn đảo)
 
 > Video demo: _(chưa có — sẽ đặt link Release `v1.0.0` ở đây)_
 
-Game 3D góc nhìn thứ ba. Mây, người giữ đèn đội nón lá, gom đom đóm, thắp 5 Đèn Lồng Lớn trên Đảo Bến và né Bóng Mực trong sương đen. Logic game nằm trong một lõi thuần JS tất định (`src/sim.js`, 60 tick/giây). Bản 3D (three.js) và chế độ headless dùng chung lõi này.
+Game 3D góc nhìn thứ ba. Mây, người giữ đèn đội nón lá, gom đom đóm, thắp lại các Đèn Lồng Lớn trên 3 hòn đảo (Đảo Bến, Đảo Cau, Đảo Chuông), né Bóng Mực và Gió Lạc. Logic nằm trong một lõi JS tất định (`src/sim.js`, 60 tick/giây); bản 3D (three.js) và chế độ headless dùng chung lõi này.
 
 ## Cài đặt và chạy (3 lệnh)
 
@@ -11,7 +11,7 @@ Cần Node.js ≥ 18 (macOS/Linux/Windows).
 ```bash
 npm install            # build_cmd
 npm start              # run_cmd: mở http://localhost:8080
-npm test               # chạy bộ test
+npm test               # 37 test chạy CLI headless thật
 ```
 
 ## Điều khiển
@@ -20,47 +20,47 @@ npm test               # chạy bộ test
 |---|---|
 | WASD / mũi tên | Di chuyển (theo hướng camera) |
 | Space | Nhảy |
-| E | Đổ ánh sáng đã mang vào Đèn Lồng gần nhất (trong 3 m) |
-| F | Tỏa sáng: choáng và đẩy lùi Bóng Mực (tốn 2 ánh sáng) |
+| Shift | Lướt (14 m/s, 0.2 s, hồi 1.5 s) |
+| E | Nạp ánh sáng vào Đèn Lồng gần nhất (≤ 2 m) |
+| F | Tỏa Sáng (tốn 3 đom đóm, hồi 3 s) |
 | Kéo chuột / Q, R | Xoay camera |
-| Enter | Chơi lại (sau khi thắng/thua) |
+| Esc / P | Tạm dừng (Tiếp tục / Chơi lại Đêm / Cài đặt / Về menu) |
 
-## Luật chơi
+Mẹo: `?night=2` trên URL vào thẳng Đêm 2; `?debug` hiện FPS.
 
-- Đi qua đom đóm (≤ 1.5 m) để nhặt, tối đa 10. Mỗi đèn cần 5 ánh sáng.
-- Bóng Mực đuổi Mây. Chạm vào thì mất 1 🔥 (máu) và đánh rơi một nửa số đom đóm đang mang. Sau đó có 1.5 s bất tử.
-- Đèn đã thắp tạo vùng an toàn bán kính 6 m mà Bóng Mực không vào được.
-- Thắng khi thắp đủ 5 đèn. Thua khi hết 3 🔥 hoặc hết 300 s (trời sáng).
-- **Điểm:** +10 mỗi đom đóm, +100 mỗi đèn thắp, +20 mỗi Bóng Mực bị choáng. Khi thắng: +1 mỗi giây còn lại, +50 mỗi 🔥 còn lại.
+## Luật chơi (số liệu chuẩn Ticket-02)
 
-## Chế độ headless (Test Contract v1.0)
+- Nhặt đom đóm (≤ 1 m), tối đa 10. Mỗi đèn cần 10, nạp nhiều lần được. Đèn sáng tạo vùng an toàn 6 m cho Bóng Mực.
+- Bóng Mực chạm: −1 🔥, rơi nửa số đom đóm đang mang, bất tử 1.5 s. Rơi khỏi đảo: −1 🔥, mất hết đom đóm, hồi sinh sau 1 s.
+- Gió Lạc (Đêm 2–3) cướp tối đa 3 đom đóm nếu bạn mang ≥ 5. Tỏa Sáng làm nó bỏ chạy và thả đồ. Bùa Gió: chạy 7.2 m/s, Lướt không hồi chiêu trong 10 s.
+- Đêm 2: hai đảo nối bằng cầu tre không lan can, bục nhảy bắn qua đảo kia. Đêm 3: ba tầng, dốc, bục nhảy lên đỉnh, gió mạnh mỗi 30 s (có báo trước).
+- Thắng Đêm khi thắp hết đèn; thua khi hết 🔥 hoặc hết giờ. Thắng Đêm 3 thì tới màn Bình Minh.
+- **Điểm:** +10 mỗi đom đóm nạp, +100 mỗi đèn, +5 mỗi lần Tỏa Sáng trúng Bóng Mực; khi thắng +2 × giây còn lại, +50 × 🔥 còn lại. Tổng điểm = tổng các Đêm đã thắng.
+
+## Chế độ headless (Test Contract v1.1)
 
 ```bash
-node src/headless.js --seed 1 --night 1 [--scenario s.json] [--inputs i.json] --ticks 600 --out out.jsonl [--snapshot-every 10]
+node src/headless.js --seed 1 --night 1|2|3 [--scenario s.json] [--inputs i.json] --ticks 600 --out out.jsonl [--snapshot-every 10]
 ```
 
-Thoát 0 khi bình thường, 2 nếu inputs/scenario/tham số sai, 1 với lỗi khác. Các số của game nằm trong `game.contract.json` và đã được test so khớp với `src/config.js`.
+Thoát 0 bình thường, 2 nếu inputs/scenario/tham số sai, 1 với lỗi khác. Số liệu trong `game.contract.json` khớp `src/config.js` (có test). Chạy đủ một Đêm (21.600 tick) mất khoảng 0.3 s (có test `< 30 s`). Ví dụ: `docs/proof/phase-2/sample-drifter-*`.
 
-Ví dụ có sẵn: `docs/proof/phase-1/sample-*.json` → `sample-out.jsonl`.
+`fall_enabled` là `true` (rơi khỏi đảo bị phạt). Không có khái niệm nào trong contract bị bỏ trống.
 
-## Các số tuning và giải thích
+## Tài liệu
 
-Mọi khái niệm trong contract đều có trong game: `fall_enabled=false` vì rìa đảo là bức tường (người chơi không rơi, không có sự kiện `fall`). Không có `dash`.
-
-## Giả định (chỗ PRD-0 còn mơ hồ)
-
-Xem chi tiết ở [docs/notes/assumptions.md](docs/notes/assumptions.md).
+- Spec + tiêu chí nghiệm thu từng tính năng Phase 2 và các giả định: [docs/notes/spec-phase2.md](docs/notes/spec-phase2.md) (Phase 1: [assumptions.md](docs/notes/assumptions.md))
+- Nhật ký dùng AI, token: [docs/notes/ai-log.md](docs/notes/ai-log.md)
+- Harness AI: [AGENTS.md](AGENTS.md), `.claude/skills/verify-phase/`
+- Đề lab gốc: `docs/lab-brief/`
 
 ## Sáng tạo của tôi
 
-Phase 1 chưa thêm phần sáng tạo ngoài lõi; ưu tiên lõi đúng và có bằng chứng. Hiệu ứng nhỏ có sẵn: đảo sáng dần khi thắp đèn, Bóng Mực đổi màu xanh khi bị choáng, đèn của Mây sáng hơn khi mang nhiều ánh sáng.
+Chưa thêm tính năng ngoài ticket; ưu tiên số liệu chuẩn và Test Contract. Chi tiết nhỏ: nhân vật phụ Ông Đăng (lời giới thiệu mỗi Đêm), vầng sáng/vùng an toàn hiển thị quanh đèn sáng, Bóng Mực đổi màu khi bị choáng, nhạc nền và âm thanh tổng hợp bằng WebAudio (không file âm thanh, xem CREDITS).
 
-## Bằng chứng
+## Bằng chứng Phase 2 (`docs/proof/phase-2/`)
 
-- `docs/proof/phase-1/npm-test.txt`: kết quả `npm test` (12 test chạy CLI headless thật và kiểm tra output).
-- `docs/proof/phase-1/sample-out.jsonl`: một lần chạy headless thật.
-- **Chưa kiểm chứng:** giao diện 3D chưa được chạy thử trên trình duyệt trong lúc viết README này; chỉ mới kiểm tra server trả đúng file và cú pháp `web/main.js`.
-
-## Harness AI và ghi chép
-
-`AGENTS.md`, `docs/notes/` (giả định, nhật ký dùng AI). Đề lab gốc ở `docs/lab-brief/`.
+- `npm-test.txt`: 37/37 test đạt (Phần A: hồi quy Phase 1 với số chuẩn; Phần B: ít nhất một scenario headless cho mỗi tính năng mới).
+- `browser-night{1,2,3}.json` + `night{1,2,3}.png`, `menu.png`: chạy bằng Chrome headless thật (`scripts/browser-check.mjs`), không có lỗi JS. **FPS đo trong môi trường render bằng CPU (SwiftShader, không GPU): trung bình khoảng 33–38 ở 1280×720 sau khi tự hạ độ phân giải; trên máy có GPU kỳ vọng cao hơn nhưng chưa đo.** Lần chạy đầu (trước khi có độ phân giải thích ứng) chỉ đạt ~20–25 FPS.
+- **Chưa kiểm chứng:** âm thanh (chưa nghe), luồng menu đầy đủ bằng thao tác tay (chơi thắng tới màn Bình Minh), nhắc "E — Nạp ánh sáng", đồng hồ đỏ ≤ 30 s, độ nhạy chuột và lưu cài đặt. Các phần này chưa có test tự động.
+- Chưa có video và Release.

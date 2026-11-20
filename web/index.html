@@ -4,21 +4,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Đảo Đèn Lồng</title>
-<style>
-  html,body{margin:0;height:100%;overflow:hidden;background:#0b0618;font-family:system-ui,sans-serif;color:#ffe9b8}
-  canvas{display:block}
-  #hud{position:fixed;top:12px;left:14px;font-size:18px;line-height:1.5;text-shadow:0 1px 4px #000;pointer-events:none}
-  #hud b{color:#ffb347}
-  #help{position:fixed;bottom:10px;left:14px;font-size:13px;opacity:.75;pointer-events:none}
-  #msg{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:#0b0618cc;text-align:center}
-  #msg h1{font-size:44px;margin:0 0 8px;color:#ffb347}
-  #msg p{font-size:20px;margin:4px}
-</style>
+<link rel="stylesheet" href="/web/style.css">
 </head>
 <body>
-<div id="hud"></div>
-<div id="help">WASD/mũi tên: đi · Space: nhảy · E: thắp đèn · F: tỏa sáng · Kéo chuột hoặc Q/R: xoay camera · Enter: chơi lại</div>
-<div id="msg"></div>
+<div id="hud" class="hidden">
+  <div id="flames"></div>
+  <div id="clock">5:00</div>
+  <div id="topright"><div id="lamps"></div><div id="score"></div></div>
+  <div id="prompt" class="hidden"></div>
+  <div id="arrow" class="hidden">➤</div>
+  <div id="windwarn" class="hidden">Gió sắp nổi…</div>
+  <div id="motebar"></div>
+  <div id="cds">
+    <div class="cd" id="cd-dash"><span class="fill"></span><b>Shift</b><i>Lướt</i></div>
+    <div class="cd" id="cd-pulse"><span class="fill"></span><b>F</b><i>Tỏa Sáng</i></div>
+  </div>
+  <div id="charmtag" class="hidden"></div>
+  <div id="debug" class="hidden"></div>
+</div>
+<div id="help" class="hidden">WASD: đi · Space: nhảy · Shift: lướt · E: nạp ánh sáng · F: tỏa sáng · Kéo chuột / Q,R: xoay · Esc,P: tạm dừng</div>
+
+<div id="screen" class="overlay"></div>
+
 <script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js"}}</script>
 <script type="module" src="/web/main.js"></script>
 </body>
