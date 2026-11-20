@@ -1,0 +1,53 @@
+# CI + GitHub Pages: chạy test headless, rồi đăng bản web chơi được lên
+# https://flying-bug.github.io/K5-L3A-DAY12-DoDuyBo-2A202603591-AI-SDLC-Dao-Den-Long/
+# Pages không có server Node nên bảng xếp hạng lưu trong trình duyệt (fallback có sẵn trong web/main.js).
+name: Test and deploy Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Build static site
+        run: |
+          mkdir -p _site/node_modules/three/build
+          cp -r web src _site/
+          cp node_modules/three/build/three.module.js _site/node_modules/three/build/
+          # Pages phục vụ dưới /<tên-repo>/ nên đổi đường dẫn tuyệt đối thành tương đối
+          sed -e 's#"/web/#"./web/#g' -e 's#"/node_modules/#"./node_modules/#g' web/index.html > _site/index.html
+          sed -i -e "s#from '/src/#from '../src/#g" -e "s#from '/web/#from './#g" _site/web/*.js
+          rm _site/web/index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

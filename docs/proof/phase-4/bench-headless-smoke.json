@@ -1,0 +1,14 @@
+{
+  "contract_version": "1.3",
+  "avg_fps": 4.5,
+  "p1_low_fps": 0.8,
+  "frame_ms_p95": 1135.8,
+  "frames": 31,
+  "load_ms": 3064,
+  "peak_mem_mb": null,
+  "vsync_off": true,
+  "renderer": "three.js 160 (WebGL2) on ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver) in Chrome/157.0.8103.79 (headless, software GL)",
+  "os": "Windows_NT 10.0.26300 x64",
+  "js_heap_peak_mb": 25,
+  "notes": "peak_mem_mb is null: this is a web build and the page cannot read the browser process RSS. vsync_off is true only if flags were applied and frames shorter than 16.6 ms were observed."
+}

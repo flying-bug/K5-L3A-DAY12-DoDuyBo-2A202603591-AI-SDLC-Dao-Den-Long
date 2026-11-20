@@ -29,7 +29,9 @@ export function mulberry32(seed) {
 
 export class Sim {
   /** @param {{seed?:number, night?:number, scenario?:object}} opts */
-  constructor({ seed = 1, night = 1, scenario = {} } = {}) {
+  /** bench: Ticket-04 benchmark scene. Disables spawns, damage, pickups, interaction, fuel burn and night end; movement rules stay. */
+  constructor({ seed = 1, night = 1, scenario = {}, bench = false } = {}) {
+    this.bench = bench;
     this.L = NIGHTS[night];
     if (!this.L) throw new Error(`unknown night ${night}`);
     this.night = night;
@@ -238,7 +240,7 @@ export class Sim {
       if (s.state === 'spawning' && --s.spawnLeft <= 0) s.state = 'wander';
       else if (s.state === 'stunned' && --s.stun <= 0) { s.state = 'wander'; s.pushLeft = 0; s.wanderT = 0; }
     }
-    this._fuelStep();
+    if (!this.bench) this._fuelStep();
     if (P.fall > 0 && --P.fall === 0) this._respawn();
     if (this.windEnabled) {
       const m = t % W.wind_every_ticks;
@@ -251,11 +253,11 @@ export class Sim {
     if (P.fall === 0) this._playerMove(input, e);
 
     // 4. pickups
-    if (P.fall === 0) this._pickups();
+    if (P.fall === 0 && !this.bench) this._pickups();
 
     // 5. lantern interaction
     const litNow = [];
-    if (P.fall === 0 && e.interact) this._interact(litNow);
+    if (P.fall === 0 && e.interact && !this.bench) this._interact(litNow);
 
     // 6. safe zones
     this._safeZones(litNow);
@@ -268,10 +270,12 @@ export class Sim {
     this._moveDrifters();
 
     // 9. touches
-    if (P.fall === 0) { this._drifterTouch(); this._shadeTouch(); }
+    if (P.fall === 0 && !this.bench) { this._drifterTouch(); this._shadeTouch(); }
 
     // 10. scheduled spawns
-    this._spawns(t);
+    if (!this.bench) this._spawns(t);
+
+    if (this.bench) return this.events; // the benchmark scene never ends
 
     // 11. win / lose (Ticket-03): no early win; flames out always loses first; at dawn count the lit lanterns
     if (P.flames <= 0) this._finish('lost', 'no_flames');

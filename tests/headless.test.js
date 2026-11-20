@@ -39,9 +39,9 @@ const speedOf = (v) => Math.hypot(v[0], v[2]);
 
 // ====================== Part A: Phase 1 regression ======================
 
-test('contract: v1.2, tuning equals src/config.js and the standard numbers', async () => {
+test('contract: v1.3, tuning equals src/config.js and the standard numbers', async () => {
   const { TUNING } = await import('../src/config.js');
-  assert.equal(contract.contract_version, '1.2');
+  assert.equal(contract.contract_version, '1.3');
   assert.deepEqual(TUNING, T);
   assert.deepEqual([T.player_speed, T.lantern_cost, T.pulse_cost, T.pulse_radius, T.pulse_cooldown_s, T.dash_speed, T.dash_duration_s, T.dash_cooldown_s],
     [6, 10, 3, 5, 3, 14, 0.2, 1.5]);

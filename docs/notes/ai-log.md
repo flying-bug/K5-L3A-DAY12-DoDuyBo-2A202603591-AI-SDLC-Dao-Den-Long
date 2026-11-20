@@ -30,3 +30,13 @@ Công cụ: Claude Code (Sonnet 5.5) trong VS Code.
 - Lỗi do chính mình viết sai kỳ vọng ở 4 test mới (khoảng cách Mây-Bóng Mực 7 m thay vì < 6 m, ngưỡng tick đến đèn, cho rằng đèn 100 là đầy). Đã sửa test cho khớp luật, không nới điều kiện.
 - Token/chi phí: chưa có số đo; ước tính 120-170k token cho Phase 3 (ước tính, không phải số đo).
 - Chưa làm: chơi tay hết một Đêm theo luật mới, video, Release.
+
+## Phase 4 (Ticket-04, phát hành)
+
+- Prompt chính: dán nguyên TICKET-04. Thứ tự làm: lõi dùng chung (`src/leaderboard.js`, `src/keybinds.js`, `src/bench.js`, cờ `bench` trong `Sim`) → script (`serve.js` + API/export, `soak.mjs`, `bench.mjs`, `make-release.mjs`) → giao diện → test → tài liệu.
+- Đo rồi mới tối ưu: bench lần đầu trên Intel UHD 63.7 FPS / p1-low 14.9 (không đạt). Thêm số đo chẩn đoán (CPU sim, CPU render, draw call) → thủ phạm là `renderer.render` với ~800 draw call của 200 Bóng Mực. Chuyển sang InstancedMesh và chỉ cập nhật shadow map khi cần → 105.6 / 36.5.
+- Soak: lần đầu RSS 45 → 55 MB (vượt 1.2×). Chạy 100 Đêm thấy RSS đi ngang ~58 MB → là JIT/heap của V8, không phải rò rỉ. Đo sau gc, coi 1 giây chạy thử là phần "tải xong Đêm đầu", và giới hạn vùng nhớ tạm của V8 trong `soak_cmd` → 47 → 51 MB, ổn định qua nhiều lần chạy.
+- Lỗi môi trường: `tar` của Git Bash hiểu `E:` là máy từ xa → dùng đường dẫn tương đối.
+- 17 test mới (75 tổng), đạt ngay lần đầu.
+- Token/chi phí: ước tính 150-200k token (ước tính, không phải số đo).
+- Chưa làm: video demo (không có công cụ quay trên máy làm bài).

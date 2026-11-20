@@ -1,75 +1,126 @@
-# Đảo Đèn Lồng (Phase 3: đèn cạn dầu)
+# Đảo Đèn Lồng — v1.0.0
 
-> Video demo: _(chưa có — sẽ đặt link Release `v1.0.0` ở đây)_
+> **Video demo:** _(chưa có — sẽ gắn vào Release `v1.0.0` và đặt link ở đây)_
+>
+> **Chơi online (GitHub Pages):** https://flying-bug.github.io/K5-L3A-DAY12-DoDuyBo-2A202603591-AI-SDLC-Dao-Den-Long/ — vào thẳng Đêm 2: [`?night=2`](https://flying-bug.github.io/K5-L3A-DAY12-DoDuyBo-2A202603591-AI-SDLC-Dao-Den-Long/?night=2). Bản online lưu bảng xếp hạng trong trình duyệt; bản chạy bằng `npm start` lưu trên đĩa.
 
-Game 3D góc nhìn thứ ba. Mây, người giữ đèn đội nón lá, gom đom đóm, thắp lại các Đèn Lồng Lớn trên 3 hòn đảo mang bối cảnh Việt Nam: **Làng quê Bắc Bộ** (đèn đình, cổng làng, tre, trâu), **Phố cổ Hội An** (đèn lồng lụa, cầu mái che, sông Hoài thả hoa đăng) và **Cố đô Huế** (thềm điện, tháp chùa, đèn cung đình). Bản đồ và luật giữ nguyên theo ticket, chỉ khác diện mạo, né Bóng Mực và Gió Lạc. Logic nằm trong một lõi JS tất định (`src/sim.js`, 60 tick/giây); bản 3D (three.js) và chế độ headless dùng chung lõi này.
+Game 3D góc nhìn thứ ba. Mây, cô bé giữ đèn đội nón lá, gom đom đóm để thắp và **giữ sáng các Đèn Lồng Lớn tới bình minh** qua ba Đêm mang bối cảnh Việt Nam: **Làng quê Bắc Bộ**, **Phố cổ Hội An** và **Cố đô Huế**. Bóng Mực hút dầu những ngọn đèn yếu, Gió Lạc cướp đom đóm. Toàn bộ luật nằm trong một lõi JavaScript tất định (`src/sim.js`, 60 tick/giây) dùng chung cho bản 3D (three.js), chế độ headless, benchmark và soak test.
+
+| Làng quê Bắc Bộ | Phố cổ Hội An | Cố đô Huế |
+|---|---|---|
+| ![Đêm 1](docs/proof/phase-3/vn-night1.png) | ![Đêm 2](docs/proof/phase-3/vn-night2.png) | ![Đêm 3](docs/proof/phase-3/vn-night3.png) |
+
+## Yêu cầu hệ thống
+
+- **Node.js ≥ 18** (đã thử với Node 24), macOS / Linux / Windows.
+- Trình duyệt hỗ trợ WebGL2 (Chrome, Edge, Firefox, Safari mới). Benchmark cần **Chrome, Edge hoặc Chromium** (tự tìm, hoặc `--browser <đường dẫn>` / biến `CHROME`).
+- GPU tích hợp là đủ: trên Intel UHD Graphics benchmark đạt ~105 FPS.
 
 ## Cài đặt và chạy (3 lệnh)
 
-Cần Node.js ≥ 18 (macOS/Linux/Windows).
-
 ```bash
-npm install            # build_cmd
-npm start              # run_cmd: mở http://localhost:8080
-npm test               # 58 test chạy CLI headless thật
+git clone <repo> && cd K5-L3A-DAY12-DoDuyBo-2A202603591-AI-SDLC-Dao-Den-Long
+npm install        # build_cmd: chỉ cài three.js
+npm start          # run_cmd: mở http://localhost:8080
 ```
 
-## Điều khiển
+Không muốn cài gì ngoài Node: tải `dao-den-long-v1.0.0.tar.gz` ở Release, giải nén, chạy `node scripts/serve.js` (three.js đã kèm sẵn). Có `Dockerfile`: `docker build -t dao-den-long . && docker run -p 8080:8080 dao-den-long`.
 
-| Phím | Hành động |
+## Điều khiển (đổi được trong Cài đặt → Phím điều khiển)
+
+| Mặc định | Hành động |
 |---|---|
-| WASD / mũi tên | Di chuyển (theo hướng camera) |
+| W A S D | Di chuyển theo hướng camera |
 | Space | Nhảy |
-| Shift | Lướt (14 m/s, 0.2 s, hồi 1.5 s) |
-| E | Nạp ánh sáng vào Đèn Lồng gần nhất (≤ 2 m) |
-| F | Tỏa Sáng (tốn 3 đom đóm, hồi 3 s) |
-| Kéo chuột / Q, R | Xoay camera |
-| Esc / P | Tạm dừng (Tiếp tục / Chơi lại Đêm / Cài đặt / Về menu) |
+| Shift trái | Lướt (14 m/s, 0.2 s, hồi 1.5 s) |
+| E | Thắp đèn / thắp lại / châm dầu (trong 2 m) |
+| F | Tỏa Sáng: choáng và đẩy lùi Bóng Mực (tốn 3 đom đóm) |
+| Kéo chuột, Q / R | Xoay camera |
+| Esc | Tạm dừng (Tiếp tục / Chơi lại Đêm / Cài đặt / Về menu) |
 
-Mẹo: `?night=2` trên URL vào thẳng Đêm 2; `?debug` hiện FPS.
+Cài đặt (được lưu): âm lượng, độ nhạy chuột, đổi phím (báo trùng, khôi phục mặc định), bảng màu dễ phân biệt, giảm chuyển động, chữ lớn ×1.25, đổ bóng.
 
-## Luật chơi (Ticket-02 + Ticket-03 "Đèn cạn dầu")
+## Luật chơi
 
-- Nhặt đom đóm (≤ 1 m). Sức chứa = 10 + 2 × số lần thắp thành công, tối đa 20. Thắp đèn lần đầu cần 10 đom đóm (nạp nhiều lần được), thắp lại đèn đã từng sáng chỉ cần 5.
-- **Đèn có dầu:** vừa thắp là 100, hao 1/giây. Bấm E ở đèn đang sáng để châm dầu (+10 mỗi đom đóm). Hết dầu đèn tắt. Dầu dưới 30 thì đèn nhấp nháy và mất vùng an toàn 6 m; Bóng Mực sẽ tới hút dầu (5/giây mỗi con). Tỏa Sáng làm chúng bỏ đèn.
-- Đêm không còn kết thúc khi thắp đủ đèn: **giữ cho đủ đèn sáng tới bình minh** (Đêm 1 cần 3/5, Đêm 2 cần 4/6, Đêm 3 cần 5/7) mới thắng.
-- Bóng Mực chạm: −1 🔥, rơi nửa số đom đóm đang mang, bất tử 1.5 s. Rơi khỏi đảo: −1 🔥, mất hết đom đóm, hồi sinh sau 1 s.
-- Gió Lạc (Đêm 2–3) cướp tối đa 3 đom đóm nếu bạn mang ≥ 5. Tỏa Sáng làm nó bỏ chạy và thả đồ. Bùa Gió: chạy 7.2 m/s, Lướt không hồi chiêu trong 10 s.
-- Đêm 2: hai đảo nối bằng cầu tre không lan can, bục nhảy bắn qua đảo kia. Đêm 3: ba tầng, dốc, bục nhảy lên đỉnh, gió mạnh mỗi 30 s (có báo trước).
-- Thua khi hết 🔥 (kể cả đúng lúc bình minh) hoặc hết giờ mà số đèn sáng chưa đủ. Thời lượng 240 / 270 / 300 s. Thắng Đêm 3 thì tới màn Bình Minh.
-- **Điểm:** +5 mỗi đom đóm nạp/châm, +100 thắp lần đầu, +40 thắp lại, +5 mỗi Bóng Mực trúng Tỏa Sáng (+15 nếu nó đang hút dầu). Bình minh (khi thắng): mỗi đèn đang sáng +50 + phần nguyên của dầu, mỗi 🔥 còn lại +50. Tổng điểm = tổng các Đêm đã thắng.
+- Nhặt đom đóm (≤ 1 m). Sức chứa 10 + 2 × số lần thắp thành công, tối đa 20.
+- Thắp đèn lần đầu cần 10 đom đóm; đèn từng sáng mà tắt chỉ cần 5. Đèn sáng có dầu 100, hao 1/giây; bấm E để châm (+10 mỗi đom đóm). Dầu < 30: đèn nhấp nháy, mất vùng an toàn 6 m, Bóng Mực tới hút dầu.
+- **Thắng** khi trời sáng mà còn đủ đèn sáng: Đêm 1 cần 3/5, Đêm 2 cần 4/6, Đêm 3 cần 5/7. **Thua** khi hết 🔥 hoặc thiếu đèn lúc bình minh. Đêm dài 240 / 270 / 300 s.
+- Bóng Mực chạm: −1 🔥, rơi nửa số đom đóm. Rơi khỏi đảo: −1 🔥, mất hết đom đóm. Gió Lạc (Đêm 2–3) cướp tối đa 3 đom đóm. Bùa Gió: chạy nhanh, lướt không hồi chiêu.
+- **Điểm:** +5 mỗi đom đóm nạp/châm, +100 thắp lần đầu, +40 thắp lại, +5 trúng Tỏa Sáng (+15 nếu Bóng Mực đang hút dầu); bình minh: +50 + phần nguyên của dầu mỗi đèn sáng, +50 mỗi 🔥. Tổng điểm = tổng các Đêm đã thắng.
+- Sau màn Bình Minh hoặc khi thua: nhập tên (3–12 ký tự chữ/số/_, nhận cả tiếng Việt có dấu) để vào **Bảng xếp hạng** top 10.
 
-## Chế độ headless (Test Contract v1.2)
+## Test
+
+```bash
+npm test     # 75 test: chạy CLI headless thật, luật Phase 1–4, bảng xếp hạng, đổi phím, cảnh benchmark, soak
+```
+
+## Headless (Test Contract v1.3)
 
 ```bash
 node src/headless.js --seed 1 --night 1|2|3 [--scenario s.json] [--inputs i.json] --ticks 600 --out out.jsonl [--snapshot-every 10]
 ```
 
-Thoát 0 bình thường, 2 nếu inputs/scenario/tham số sai, 1 với lỗi khác. Số liệu trong `game.contract.json` khớp `src/config.js` (có test). Chạy đủ một Đêm (21.600 tick) mất khoảng 0.3 s (có test `< 30 s`). Ví dụ: `docs/proof/phase-2/sample-drifter-*`.
+Thoát 0 bình thường, 2 nếu tham số / inputs / scenario sai, 1 với lỗi khác. Số liệu trong [`game.contract.json`](game.contract.json) khớp `src/config.js` (có test). Một Đêm đủ dài chạy ~0.3 s.
 
-Từ v1.2: snapshot có `fuel`, `ever_lit`, `relit_count`, `capacity`, trạng thái `drain`; sự kiện `refuel`, `lantern_out`, `fuel_drain`; kết thúc `dawn_survived`. `fall_enabled` là `true` (rơi khỏi đảo bị phạt). Không có khái niệm nào trong contract bị bỏ trống.
+## Benchmark
 
-## Tài liệu
+```bash
+node scripts/bench.mjs --seed 42 --duration 30 --out bench.json      # mở Chrome/Edge 1280x720, ~35 s
+```
 
-- Phase 3: [ADR 0001](docs/adr/0001-lantern-fuel-and-dawn-win.md) (quyết định thiết kế), [CHANGELOG.md](CHANGELOG.md) (thay đổi phá vỡ tương thích), [spec-phase3.md](docs/notes/spec-phase3.md) (tiêu chí nghiệm thu)
-- Phase 2: [spec-phase2.md](docs/notes/spec-phase2.md) · Phase 1: [assumptions.md](docs/notes/assumptions.md)
-- Nhật ký dùng AI, token: [docs/notes/ai-log.md](docs/notes/ai-log.md)
-- Harness AI: [AGENTS.md](AGENTS.md), `.claude/skills/verify-phase/`
-- Đề lab gốc: `docs/lab-brief/`
+Cảnh chuẩn: Đêm 1, 200 Bóng Mực `wander`, 100 đom đóm, L1–L3 sáng fuel 100, Mây đứng yên, camera bay vòng R 30 m / Y 15 m / 15 s một vòng, 3 s khởi động rồi đo. Vsync được tắt bằng cờ `--disable-gpu-vsync --disable-frame-rate-limit`. `peak_mem_mb` là `null` vì là bản web (trang không đọc được RSS của trình duyệt); có thêm `js_heap_peak_mb`. Thêm `--headless` để chạy không cửa sổ (render bằng CPU, số đo không có ý nghĩa).
+
+Kết quả trên máy làm bài ([bench.json](bench.json)): **avg 105.6 FPS, p1-low 36.5 FPS, p95 13.5 ms, load 1.9 s** (Intel UHD Graphics, Chrome 157, Windows 11).
+
+## Soak test
+
+```bash
+node --max-semi-space-size=1 scripts/soak.mjs --seed 7 --nights 10 --out soak.json
+```
+
+10 Đêm (1→2→3 xoay vòng) trong một tiến trình, input ngẫu nhiên theo seed. Kết quả ([soak.json](soak.json)): **0 crash, RSS 47 → 51 MB** (ngưỡng ≤ 1.2×).
+
+## Bảng xếp hạng
+
+Lưu trên đĩa ở `data/leaderboard.json` (đổi bằng biến `DDL_DATA_DIR`), còn nguyên sau khi tắt và mở lại game. Xuất ra file:
+
+```bash
+node scripts/serve.js --export-leaderboard out.json     # {"entries":[...]} top 10, đúng thứ tự
+```
+
+## Dễ tiếp cận
+
+- Đổi phím cho mọi hành động, báo khi trùng phím, nút khôi phục mặc định.
+- Phụ đề / chỉ báo hình ảnh cho: Bóng Mực xuất hiện (kèm mũi tên ở mép màn hình), gió sắp thổi, 10 giây cuối, đèn sắp hết dầu.
+- Giảm chuyển động: tắt rung camera và chớp màn hình khi bị đánh.
+- Chữ UI tối thiểu 18 px ở 1280×720, tùy chọn chữ lớn ×1.25.
+- Bảng màu dễ phân biệt (mù màu): Bóng Mực viền xanh `#00B3FF`, cảnh báo trắng kèm ⚠; đèn tắt xẹp và rách, đèn sắp cạn nhấp nháy.
 
 ## Sáng tạo của tôi
 
-Chưa thêm tính năng ngoài ticket; ưu tiên số liệu chuẩn và Test Contract. Chi tiết nhỏ: nhân vật phụ Ông Đăng (lời giới thiệu mỗi Đêm), vầng sáng/vùng an toàn hiển thị quanh đèn sáng, Bóng Mực đổi màu khi bị choáng, nhạc nền và âm thanh tổng hợp bằng WebAudio (không file âm thanh, xem CREDITS).
+- **Bối cảnh Việt Nam:** Đêm 1 Làng quê Bắc Bộ (cổng làng, nhà ngói, tre, cây đa, trâu, vịt, đèn đình), Đêm 2 Phố cổ Hội An (phố vàng, cầu mái che, sông Hoài thả hoa đăng, đèn lồng lụa, mèo), Đêm 3 Cố đô Huế (thềm đá, tường đỏ, cổng kiểu Ngọ Môn, tháp 7 tầng, đèn cung đình, thỏ ngọc). Nhân vật phụ Ông Đăng giới thiệu mỗi Đêm.
+- Minimap xoay theo camera, cột sáng chỉ bục nhảy, bầu trời có trăng, biển mây trôi, bóng đổ, hạt bay (lá tre, hoa giấy, hoa phượng), cảnh vật lễ hội đèn lồng đỏ vàng.
+- Mọi phần sáng tạo chỉ ở `web/` (hiển thị), không đổi luật hay đầu ra headless; trong cảnh benchmark các thực thể sáng tạo động được tắt. Bằng chứng: 75 test headless vẫn đạt.
+- Đêm 2 và 3 dùng màu nền khác bảng màu chuẩn của Ticket-02 (theo chủ đề vùng miền); Đêm 1 giữ bảng màu chuẩn.
 
-## Bằng chứng Phase 3 (`docs/proof/phase-3/`)
+## Tài liệu và bằng chứng
 
-- `npm-test.txt`: 58/58 test đạt (22 test mới cho Phase 3; test cũ bị luật mới làm sai đã sửa hoặc xóa có lý do, xem CHANGELOG; không có test nào bị skip).
-- `fuel-normal.png`, `fuel-colorblind.png`: ảnh từ Chrome headless thật (thanh dầu, cảnh báo sắp hết dầu, sức chứa 7/16, "cần 3", bảng màu dễ phân biệt). Trong ảnh mình ép trạng thái đèn bằng lệnh kiểm tra; game thật chỉ đổi theo luật.
-- **Chưa kiểm chứng bằng tay:** nhấp nháy 1 Hz và đèn xẹp/rách khi chơi thật, tiếng đèn tắt, lưu cài đặt mù màu, chơi hết một Đêm tới bình minh.
+- [CHANGELOG.md](CHANGELOG.md) — thay đổi của cả 4 phase (breaking changes của Phase 2 và 3).
+- Spec + tiêu chí nghiệm thu: [Phase 2](docs/notes/spec-phase2.md), [Phase 3](docs/notes/spec-phase3.md), [Phase 4](docs/notes/spec-phase4.md); giả định Phase 1: [assumptions.md](docs/notes/assumptions.md).
+- Quyết định thiết kế: [ADR 0001 — nhiên liệu đèn và thắng ở bình minh](docs/adr/0001-lantern-fuel-and-dawn-win.md).
+- Bằng chứng từng phase: [`docs/proof/`](docs/proof/) (output test, headless mẫu, ảnh chụp trình duyệt thật, bench, soak).
+- Nhật ký dùng AI: [ai-log.md](docs/notes/ai-log.md) · Retro: [docs/retro.md](docs/retro.md).
+- Harness AI: [AGENTS.md](AGENTS.md), [`.claude/skills/verify-phase/`](.claude/skills/verify-phase/SKILL.md).
+- Đề lab gốc: [`docs/lab-brief/`](docs/lab-brief/).
 
-## Bằng chứng Phase 2 (`docs/proof/phase-2/`)
+## Chưa đạt / chưa kiểm chứng (ghi trung thực)
 
-- `npm-test.txt`: 37/37 test đạt (Phần A: hồi quy Phase 1 với số chuẩn; Phần B: ít nhất một scenario headless cho mỗi tính năng mới).
-- `browser-night{1,2,3}.json` + `night{1,2,3}.png`, `menu.png`: chạy bằng Chrome headless thật (`scripts/browser-check.mjs`), không có lỗi JS. **FPS đo trong môi trường render bằng CPU (SwiftShader, không GPU): trung bình khoảng 33–38 ở 1280×720 sau khi tự hạ độ phân giải; trên máy có GPU kỳ vọng cao hơn nhưng chưa đo.** Lần chạy đầu (trước khi có độ phân giải thích ứng) chỉ đạt ~20–25 FPS.
-- **Chưa kiểm chứng:** âm thanh (chưa nghe), luồng menu đầy đủ bằng thao tác tay (chơi thắng tới màn Bình Minh), nhắc "E — Nạp ánh sáng", đồng hồ đỏ ≤ 30 s, độ nhạy chuột và lưu cài đặt. Các phần này chưa có test tự động.
-- Chưa có video và Release.
+- **Video demo chưa có** trong repo (máy làm bài không có công cụ quay/ffmpeg); cần quay tay và gắn vào Release.
+- Chưa kiểm chứng bằng mắt: phụ đề Bóng Mực xuất hiện / gió / 10 giây cuối, rung camera và chớp màn hình, âm thanh. Đã kiểm chứng bằng ảnh: phụ đề đèn sắp hết dầu, đổi phím báo trùng, nhập tên và bảng xếp hạng.
+- Số FPS ở trên đo trên máy làm bài; máy chấm của giảng viên sẽ cho số khác.
+- Cảnh vật trang trí không có va chạm (nhân vật đi xuyên qua) để không đổi luật di chuyển của contract.
+
+## Giấy phép
+
+Mã nguồn: [MIT](LICENSE). Nguồn của mọi thư viện và công cụ: [CREDITS.md](CREDITS.md).

@@ -24,7 +24,7 @@ const ST = {
 };
 const STYLE_OF = { 1: ['bacbo'], 2: ['hoian', 'hoian'], 3: ['hue'] };
 
-export function buildDecor(night, L) {
+export function buildDecor(night, L, opts = {}) {
   const rng = mulberry32(1000 + night * 7919);
   const R = (a, b) => a + rng() * (b - a);
   const g = new THREE.Group();
@@ -249,11 +249,11 @@ export function buildDecor(night, L) {
       critters.push({ kind, q, x: p[0], z: p[2], tx: p[0], tz: p[2], area: a, wait: R(0, 3), ph: R(0, 6), speed: SPEED[kind] });
     }
   };
-  for (const k of st0.animals) makeCritters(k, k === 'duck' ? 5 : k === 'buffalo' ? 2 : night === 2 ? 6 : 5);
+  if (!opts.bench) for (const k of st0.animals) makeCritters(k, k === 'duck' ? 5 : k === 'buffalo' ? 2 : night === 2 ? 6 : 5); // creatures are off in the benchmark scene
 
   // ---------- cranes (hạc) circling the sky ----------
   const birds = [];
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < (opts.bench ? 0 : 4); i++) {
     const q = new THREE.Group();
     const body = new THREE.Mesh(new THREE.ConeGeometry(0.22, 1.1, 6), lam(0xf5f1e6)); body.rotation.x = Math.PI / 2;
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 6), lam(RED)); head.position.z = 0.6;
@@ -267,7 +267,7 @@ export function buildDecor(night, L) {
 
   // ---------- floating sky lanterns (background festival) ----------
   const sky = [];
-  for (let i = 0; i < 50; i++) { const a = R(0, 6.28), r = R(55, 170); sky.push({ x: areas[0].cx + (night === 2 ? 35 : 0) + Math.cos(a) * r, y: R(8, 90), z: Math.sin(a) * r, sp: R(0.5, 1.2), ph: R(0, 6), color: pick1(st0.sky), s: R(1.2, 2.6) }); }
+  for (let i = 0; i < (opts.bench ? 0 : 50); i++) { const a = R(0, 6.28), r = R(55, 170); sky.push({ x: areas[0].cx + (night === 2 ? 35 : 0) + Math.cos(a) * r, y: R(8, 90), z: Math.sin(a) * r, sp: R(0.5, 1.2), ph: R(0, 6), color: pick1(st0.sky), s: R(1.2, 2.6) }); }
   const skyMesh = inst(new THREE.BoxGeometry(0.7, 1, 0.7), new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false }), sky, () => {});
 
   // ---------- animation ----------

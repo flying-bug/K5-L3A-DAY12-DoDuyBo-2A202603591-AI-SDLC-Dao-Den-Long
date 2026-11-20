@@ -11,5 +11,6 @@ Run in this order and report real outputs, not summaries:
 4. Full night perf: `--ticks 21600` under 30 s.
 5. Browser: `node scripts/browser-check.mjs --night N --seconds 8 --out docs/proof/phase-N/nightN.png`; look at the PNG; report avg FPS and JS errors.
 6. `game.contract.json` equals `src/config.js` (covered by the first test).
-7. README and spec: anything not verified is written as "chưa kiểm chứng".
-8. Do not commit or tag; hand the diff to the user.
+7. Phase 4+: `node scripts/bench.mjs --seed 42 --duration 30 --out bench.json` (avg >= 60, p1-low >= 30, load <= 10 s) and the contract `soak_cmd` (0 crashes, mem_end <= 1.2 x mem_start); `npm run release`, extract the archive elsewhere and start it.
+8. README and spec: anything not verified is written as "chưa kiểm chứng".
+9. Do not commit or tag; hand the diff to the user.
