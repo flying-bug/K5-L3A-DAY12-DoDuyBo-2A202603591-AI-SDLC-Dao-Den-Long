@@ -42,3 +42,9 @@ Công cụ: Claude Code (Sonnet 5.5) trong VS Code.
 - 17 test mới (75 tổng), đạt ngay lần đầu.
 - Token/chi phí: ước tính 150-200k token (ước tính, không phải số đo).
 - Chưa làm: video demo (không có công cụ quay trên máy làm bài).
+
+## Sau phase-4 (bản điện thoại, màn hình chính, hướng dẫn, Release, video)
+- Lời nhắc chính: "người dùng điện thoại chưa chơi được, hỗ trợ mobile rồi commit release"; "bổ sung giao diện động trước khi vào, nền là video demo"; "thiếu hướng dẫn chơi từng màn"; "bạn quay video xong đặt vào git".
+- Kiểm chứng: giả lập điện thoại qua CDP (chạm joystick → Mây đi ~9.7 m, nút Nhảy → rời đất, nút II → tạm dừng); demo menu theo dõi bằng bộ đếm khung hình (phát hiện lần "đứng hình" là do cửa sổ bị throttle, không phải lỗi); 75/75 test; CI xanh; bản Release giải nén chạy được.
+- AI sai: bot quay video lần đầu không thắp được đèn → mô phỏng bot trên `Sim` trong Node với 12 seed rồi sửa. Ngắt lệnh quay giữa chừng làm ghi đè file video cũ → phải để lần quay đang chạy hoàn tất.
+- Token/chi phí: ước tính thêm 150-250k token (ước tính, không phải số đo).

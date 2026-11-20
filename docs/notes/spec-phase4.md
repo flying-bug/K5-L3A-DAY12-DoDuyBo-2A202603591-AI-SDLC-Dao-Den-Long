@@ -11,7 +11,7 @@
 | 4d | Cỡ chữ | Chữ UI ≥ 18 px ở 1280×720; tùy chọn ×1.25 | `web/style.css` (mọi `font-size` ≥ 18 px, nhân `--u`); ảnh `ui-settings.png` |
 | 5 | Đóng gói | Clone sạch → tối đa 3 lệnh → chơi; README đủ mục; CHANGELOG 4 phase; CREDITS; LICENSE; Release có bản chạy được | `npm run release` → `release/dao-den-long-v1.0.0.tar.gz` (đã giải nén và chạy thử); `Dockerfile` |
 | 6 | Contract v1.3 | `contract_version 1.3`, `bench_cmd`, `soak_cmd`, giữ mọi yêu cầu cũ | test `contract v1.3…`; 58 test cũ vẫn đạt |
-| 7 | Retro & demo | Retro 1–2 trang; video < 5 phút | `docs/retro.md`. **Video chưa có** (máy làm bài không có ffmpeg/công cụ quay; cần quay tay) |
+| 7 | Retro & demo | Retro 1–2 trang; video < 5 phút | `docs/retro.md`. Video `docs/demo/demo.mp4` (4 phút, quay tự động bằng script; phần chơi do bot điều khiển, ghi rõ trong video) — làm sau mốc 4 giờ. Ghi chú cũ: video chưa có lúc tag (máy làm bài không có ffmpeg/công cụ quay; cần quay tay) |
 
 ## Giả định
 

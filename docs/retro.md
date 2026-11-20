@@ -9,7 +9,7 @@
 | 1 — PRD-0 | Đêm 1 chơi được, headless v1.0 | 12/12 | Tách lõi `Sim` tất định dùng chung cho headless và 3D ngay từ đầu, nên mọi phase sau chỉ cần sửa một chỗ | Bản 3D chưa được mở trong trình duyệt khi tag; mới chỉ kiểm chứng headless |
 | 2 — Ba hòn đảo | 3 Đêm, contract v1.1, menu/HUD/âm thanh | 37/37 | Viết spec + AC trước, test Phần A (hồi quy với số chuẩn) và Phần B (tính năng mới); có `scripts/browser-check.mjs` để chụp ảnh và đo FPS trong trình duyệt thật | Lần đầu 5/37 fail, cả 5 do test sai. FPS khi render bằng CPU chỉ ~20–25, phải thêm hạ độ phân giải tự động |
 | 3 — Đèn cạn dầu | Nhiên liệu, drain, thắng ở bình minh, v1.2 | 58/58 | ADR + CHANGELOG trước khi sửa code; chạy test cũ để thấy đúng 7 test bị luật mới làm sai rồi sửa/xóa có lý do, không skip | 4 test mới viết sai kỳ vọng; giao diện bối cảnh Việt Nam làm FPS (CPU) giảm |
-| 4 — Phát hành | Bench, soak, bảng xếp hạng, đổi phím, phụ đề, Release | 75/75 | Đo trước rồi tối ưu: instancing Bóng Mực + shadow map theo nhu cầu đưa bench từ 64 FPS / p1-low 15 lên 105 / 36 trên GPU tích hợp | Chưa có video; vài chỉ báo trợ năng chưa xem bằng mắt |
+| 4 — Phát hành | Bench, soak, bảng xếp hạng, đổi phím, phụ đề, Release | 75/75 | Đo trước rồi tối ưu: instancing Bóng Mực + shadow map theo nhu cầu đưa bench từ 64 FPS / p1-low 15 lên 105 / 36 trên GPU tích hợp | Video, Release và bản điện thoại làm **sau mốc 4 giờ**; vài chỉ báo trợ năng chưa xem bằng mắt |
 
 ## 2. Điều hiệu quả và không hiệu quả khi làm với AI
 
@@ -35,6 +35,8 @@
 | P3 | Tính sai khoảng cách Mây–Bóng Mực (7 m chứ không < 6 m) và thời gian tới đèn | Test fail, tính lại bằng tay |
 | P4 | Soak lần đầu vượt ngưỡng 1.2× RSS (45 → 55 MB) | Chạy lặp nhiều lần và chạy 100 Đêm: RSS đi ngang (JIT/heap), không phải rò rỉ; đo sau khi gc và sau 1 s chạy thử |
 | P4 | Soak đạt trên Windows nhưng trượt trên GitHub Actions/Linux (48 → 61 MB): chạy thử chỉ Đêm 1, chưa tính phần tăng một lần khi gặp Đêm 2/3 | CI đỏ → tái hiện bằng Docker Linux, chạy 100 Đêm thấy đi ngang → chạy thử cả ba loại Đêm trước khi đo |
+| P4 | Soak đạt trên Windows nhưng CI (Linux) đỏ — đã có ở dòng trên; thêm: bench sau khi đổi sói p1-low 30.8 sát ngưỡng | Đo xen kẽ bản cũ/bản mới 4 lần → máy dao động (p1-low 10–60), không phải do sói; ghi số lần đo cuối, không chọn số đẹp |
+| P4 | Bot quay video không thắp được đèn nào trong 55 s | Xem khung hình trích từ video; chạy lại logic bot trên `Sim` trong Node với 12 seed → thêm né sói, lướt khi xa, quay tới khi thắp được đèn |
 | P4 | Bench p1-low 15 FPS (không đạt) | Đo có chẩn đoán (CPU sim 0.4 ms, phần lớn ở `renderer.render`), xác định 800 draw call của Bóng Mực → instancing |
 
 ## 4. Harness giúp nhiều nhất
@@ -63,3 +65,10 @@ Cách tiết kiệm: đọc file theo đoạn (`grep -n`, `sed -n`) thay vì đ�
 - Chốt hướng mỹ thuật (bối cảnh Việt Nam) một lần trước khi trang trí, tránh làm rồi bỏ.
 - Dựng instancing và đo hiệu năng từ Phase 2 (khi có nhiều Bóng Mực), không đợi tới benchmark.
 - Viết test giao diện tự động (qua CDP) cho phụ đề và trợ năng thay vì chỉ chụp ảnh.
+
+## 7. Sau mốc 4 giờ (ghi trung thực)
+
+- Thiếu Release `v1.0.0` và video lúc hết giờ: Release tạo lúc ~22h, video quay lúc ~23h30 cùng ngày.
+- Thêm sau giờ: điều khiển cảm ứng (thử trên giả lập điện thoại của Chrome, chưa thử máy thật), màn hình chính có demo tự chơi, hướng dẫn chơi từng Đêm, CI + GitHub Pages.
+- Video quay tự động: Chrome thật + CDP screencast + ffmpeg; phần chơi do bot (cùng phím/cảm ứng như người chơi). Phần bằng chứng là output thật chạy ngay trước khi quay, trong đó bench lúc quay có p1-low 24.5 (dưới ngưỡng) — giữ nguyên trong video.
+- Bài học: đặt Release và video vào checklist từ đầu Phase 4 (rubric: thiếu Release thì phase không được chấm); không để "đẹp thêm" chen trước việc bắt buộc.
