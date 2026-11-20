@@ -17,3 +17,6 @@
 ## Công cụ AI
 - **Claude Code** (Anthropic; Sonnet 5.5 và Opus 5.5) — viết code, test, tài liệu và thiết kế cách dựng mô hình/kết cấu bằng code, dưới sự điều phối và kiểm chứng của tác giả. Chi tiết trong `docs/notes/ai-log.md` và `docs/retro.md`.
 - Không dùng AI tạo ảnh, tạo âm thanh hay tạo mô hình 3D.
+
+## Video demo
+- `docs/demo/demo.mp4` quay tự động bằng script (do Claude Code viết): Chrome thật qua Chrome DevTools Protocol (screencast), phần chơi do bot gửi phím/cảm ứng; mã hóa bằng **ffmpeg** (bản kèm gói Python `imageio-ffmpeg`, LGPL/GPL) — https://ffmpeg.org. Không dùng AI tạo video.
